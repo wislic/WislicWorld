@@ -1,0 +1,40 @@
+{
+  "reports": [
+    {
+      "title": "宏观日报 2026-03-29",
+      "category": "daily",
+      "date": "2026-03-29",
+      "file": "reports/daily/2026-03-29.html"
+    },
+    {
+      "title": "宏观日报 2026-03-28",
+      "category": "daily",
+      "date": "2026-03-28",
+      "file": "reports/daily/2026-03-28.html"
+    },
+    {
+      "title": "盘中速览 2026-03-29",
+      "category": "flash",
+      "date": "2026-03-29",
+      "file": "reports/flash/2026-03-29.html"
+    },
+    {
+      "title": "盘中速览 2026-03-28",
+      "category": "flash",
+      "date": "2026-03-28",
+      "file": "reports/flash/2026-03-28.html"
+    },
+    {
+      "title": "美伊冲突资本市场影响",
+      "category": "deep",
+      "date": "2026-03-25",
+      "file": "reports/deep/us-iran-2026.html"
+    },
+    {
+      "title": "滞胀环境资产配置框架",
+      "category": "deep",
+      "date": "2026-03-20",
+      "file": "reports/deep/stagflation-framework.html"
+    }
+  ]
+}
