@@ -824,7 +824,7 @@ function showPanel(id, sub) {
   if (panel) panel.classList.add('on');
 
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const map = { home: 0, macro: 1, geoint: 2, assets: 3, market: 4, risk: 5, reports: 6, system: 7 };
+  const map = { home: 0, calendar: 1, macro: 2, geoint: 3, assets: 4, market: 5, risk: 6, reports: 7, system: 8 };
   if (map[id] !== undefined) document.querySelectorAll('.nav-btn')[map[id]].classList.add('active');
 
   // If assets panel with sub-filter
