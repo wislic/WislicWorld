@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI投研团队周报 W13</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0C0E;--surface:#131519;--surface2:#1A1D23;--border:#2A2D35;--text:#E8E6E1;--text2:#9A9892;--text3:#5A5850;--accent:#C8A96E;--red:#E85D4A;--green:#4ADE80;--yellow:#FACC15;--blue:#5B8DEF;--purple:#A78BFA;--cyan:#67E8F9}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+.container{max-width:900px;margin:0 auto;padding:0 24px}
+/* Header */
+.header{padding:48px 0 40px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.header::before{content:'W13';position:absolute;right:-20px;top:-30px;font-family:'Playfair Display',serif;font-size:200px;font-weight:900;color:rgba(200,169,110,0.04);line-height:1}
+.header-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px}
+.header h1{font-family:'Noto Serif SC',serif;font-size:32px;font-weight:900;line-height:1.3;margin-bottom:6px}
+.header-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
+.risk-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:4px;font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.risk-red{background:rgba(232,93,74,0.15);color:var(--red);border:1px solid rgba(232,93,74,0.3)}
+/* Market strip */
+.market-strip{display:flex;gap:2px;margin:32px 0 0;overflow-x:auto;padding-bottom:4px}
+.ms-item{flex:1;min-width:95px;padding:10px 12px;background:var(--surface);border-radius:6px;text-align:center}
+.ms-label{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+.ms-val{font-size:16px;font-weight:700;margin:4px 0 2px;font-family:'JetBrains Mono',monospace}
+.ms-chg{font-size:11px;font-weight:600}
+.up{color:var(--green)}.dn{color:var(--red)}.flat{color:var(--yellow)}
+/* Sections */
+.section{padding:40px 0;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.sec-num{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;color:rgba(200,169,110,0.12);line-height:1;margin-bottom:-12px}
+.sec-title{font-family:'Noto Serif SC',serif;font-size:20px;font-weight:700;margin-bottom:4px}
+.sec-sub{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.1em;margin-bottom:20px}
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+td{font-size:13px;padding:8px 10px;border-bottom:1px solid rgba(42,45,53,0.5);vertical-align:top}
+tr:hover td{background:rgba(200,169,110,0.03)}
+/* Signal dots */
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.dot-g{background:var(--green)}.dot-r{background:var(--red)}.dot-y{background:var(--yellow)}.dot-b{background:var(--blue)}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px}
+.card-accent{border-left:3px solid var(--accent)}
+.card-red{border-left:3px solid var(--red)}
+.card-green{border-left:3px solid var(--green)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.card-body{font-size:13px;color:var(--text2);line-height:1.7}
+/* Highlight box */
+.highlight{background:linear-gradient(135deg,rgba(200,169,110,0.08),rgba(200,169,110,0.02));border:1px solid rgba(200,169,110,0.2);border-radius:8px;padding:20px 24px;margin:20px 0}
+.highlight-title{color:var(--accent);font-weight:700;font-size:14px;margin-bottom:8px}
+/* Signal change */
+.sig-change{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.sig-up{background:rgba(74,222,128,0.12);color:var(--green)}
+.sig-dn{background:rgba(232,93,74,0.12);color:var(--red)}
+.sig-new{background:rgba(250,204,21,0.12);color:var(--yellow)}
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;margin-right:4px}
+.tag-action{background:rgba(232,93,74,0.15);color:var(--red)}
+.tag-signal{background:rgba(74,222,128,0.12);color:var(--green)}
+.tag-watch{background:rgba(250,204,21,0.12);color:var(--yellow)}
+/* Footer */
+.footer{padding:32px 0;text-align:center;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+/* One pager */
+.onepager{background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:28px 32px;margin:32px 0}
+.onepager h3{font-family:'Noto Serif SC',serif;font-size:18px;color:var(--accent);margin-bottom:16px;text-align:center}
+.op-item{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.op-num{width:28px;height:28px;background:var(--accent);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.op-text{font-size:14px;line-height:1.6}
+.op-action{margin-top:16px;padding:14px 18px;background:rgba(232,93,74,0.08);border:1px solid rgba(232,93,74,0.2);border-radius:6px;font-size:14px;font-weight:600;text-align:center;color:var(--red)}
+@media(max-width:640px){.header h1{font-size:24px}.market-strip{flex-wrap:wrap}.ms-item{min-width:80px}.sec-num{font-size:36px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== HEADER ==================== -->
+<header class="header">
+<div class="header-meta">AI Investment Research Team &nbsp;·&nbsp; Weekly Report</div>
+<h1>宏观经济与大类资产周报</h1>
+<div class="header-sub">2026年3月24日 – 3月28日（第13周）&nbsp;&nbsp;|&nbsp;&nbsp;发布日：2026年3月29日</div>
+<span class="risk-badge risk-red"><span class="dot dot-r"></span>风险评级：RED — VIX突破30，启动危机体制</span>
+
+<div class="market-strip">
+<div class="ms-item"><div class="ms-label">S&P 500</div><div class="ms-val dn">6,369</div><div class="ms-chg dn">-1.67%</div></div>
+<div class="ms-item"><div class="ms-label">Nasdaq</div><div class="ms-val dn">20,948</div><div class="ms-chg dn">-2.15%</div></div>
+<div class="ms-item"><div class="ms-label">上证指数</div><div class="ms-val dn">~3,870</div><div class="ms-chg dn">-1.7%</div></div>
+<div class="ms-item"><div class="ms-label">恒生指数</div><div class="ms-val dn">~23,200</div><div class="ms-chg dn">-1.9%</div></div>
+<div class="ms-item"><div class="ms-label">Brent原油</div><div class="ms-val up">$105.3</div><div class="ms-chg up">+3.4%</div></div>
+<div class="ms-item"><div class="ms-label">黄金</div><div class="ms-val up">$4,524</div><div class="ms-chg up">+2.6%</div></div>
+<div class="ms-item"><div class="ms-label">VIX</div><div class="ms-val dn">31.05</div><div class="ms-chg dn">+13.2%</div></div>
+<div class="ms-item"><div class="ms-label">DXY</div><div class="ms-val flat">100.0</div><div class="ms-chg flat">+0.3%</div></div>
+</div>
+</header>
+
+<!-- ==================== ONE-PAGER ==================== -->
+<div class="onepager">
+<h3>一页纸摘要</h3>
+<div class="op-item"><div class="op-num">1</div><div class="op-text"><strong>VIX突破30触发体制切换。</strong>本周VIX从22飙升至31.05（+13.16%），正式突破危机阈值30。按风控手册，需立即启动危机体制——收紧止损宽度、降低新建仓位至标准50%、权益降至25-30%、现金提至20-30%。这是本周最重要的单一事件。</div></div>
+<div class="op-item"><div class="op-num">2</div><div class="op-text"><strong>工业利润+15.2%确认盈利拐点。</strong>1-2月规上工业企业利润同比+15.2%，高技术制造业+58.7%，半导体器件+130.5%。毛利润从上年持平跳升至+6.9%，每百元营收成本2022年来首次下降。补库存从假设变为验证中，置信度上调至80%。</div></div>
+<div class="op-item"><div class="op-num">3</div><div class="op-text"><strong>3月PMI预期大幅回升。</strong>新兴产业PMI(EPMI)3月飙升13点至57.6，创5年以上最强改善。生产和新订单指数均突破60。如果3/31官方PMI回升至50以上，将是补库存第二个确认信号。</div></div>
+<div class="op-action">⚡ 本周行动指令：VIX>30已触发 → 立即启动危机体制切换，A股权益降至35%，现金提至20%</div>
+</div>
+
+<!-- ==================== SECTION 1: DATA ==================== -->
+<section class="section">
+<div class="sec-num">01</div>
+<div class="sec-title">本周数据全景</div>
+<div class="sec-sub">DATA PANORAMA · 投资助理</div>
+
+<h4 style="color:var(--accent);font-size:13px;margin-bottom:10px;font-family:'JetBrains Mono',monospace">▎中国 — 本周核心数据</h4>
+<table>
+<tr><th>指标</th><th>数值</th><th>前值/预期</th><th>信号</th></tr>
+<tr><td>1-2月工业利润</td><td style="color:var(--green);font-weight:700">+15.2%</td><td>上年全年+0.6%</td><td><span class="tag tag-signal">SIGNAL CHANGE</span>盈利拐点确认</td></tr>
+<tr><td>高技术制造业利润</td><td style="color:var(--green);font-weight:700">+58.7%</td><td>上年全年+13.3%</td><td>AI/半导体产业链爆发</td></tr>
+<tr><td>营业收入</td><td>+5.3%</td><td>上年+1.1%</td><td>营收增长明显加速</td></tr>
+<tr><td>营业收入利润率</td><td>4.92%</td><td>上年4.49%</td><td>+0.43ppt，效率改善</td></tr>
+<tr><td>百元营收成本</td><td>84.83元</td><td>85.07元</td><td>2022年来首次下降</td></tr>
+<tr><td>3月EPMI（新兴产业）</td><td style="color:var(--green);font-weight:700">57.6</td><td>2月44.6</td><td><span class="tag tag-signal">SIGNAL CHANGE</span>5年最强改善</td></tr>
+<tr><td>2月官方制造业PMI</td><td style="color:var(--red)">49.0</td><td>预期49.1</td><td>春节扰动，3月预期大幅反弹</td></tr>
+</table>
+
+<h4 style="color:var(--accent);font-size:13px;margin:24px 0 10px;font-family:'JetBrains Mono',monospace">▎全球市场 — 本周表现（截至3/27-28）</h4>
+<table>
+<tr><th>资产</th><th>收盘/水平</th><th>周涨跌</th><th>3月涨跌</th><th>信号</th></tr>
+<tr><td>S&P 500</td><td>6,369</td><td class="dn">-1.67%</td><td class="dn">~-4%</td><td>连续下跌，接近修正区域</td></tr>
+<tr><td>Nasdaq</td><td>20,948</td><td class="dn">-2.15%</td><td class="dn">~-6%</td><td>科技股领跌，AI叙事承压</td></tr>
+<tr><td>Brent原油</td><td>$105.3</td><td class="up">+3.4%</td><td class="up">~+30%</td><td>Kharg岛+海峡紧张持续推高</td></tr>
+<tr><td>黄金</td><td>$4,524</td><td class="up">+2.6%</td><td class="flat">震荡</td><td>本周反弹——避险需求回归？</td></tr>
+<tr><td>VIX恐慌指数</td><td style="color:var(--red);font-weight:700">31.05</td><td class="dn">+13.2%</td><td class="dn">+56%</td><td><span class="tag tag-action">ACTION</span>突破30危机阈值</td></tr>
+<tr><td>美元DXY</td><td>100.0</td><td class="up">+0.3%</td><td class="up">+2.6%</td><td>避险虹吸持续</td></tr>
+<tr><td>美国10Y</td><td>4.44%</td><td class="dn">+5bp</td><td class="flat">高位震荡</td><td>通胀预期vs避险拉锯</td></tr>
+<tr><td>比特币</td><td>$66,800</td><td class="dn">-2.4%</td><td class="dn">~-15%</td><td>风险资产属性显现</td></tr>
+</table>
+
+<h4 style="color:var(--accent);font-size:13px;margin:24px 0 10px;font-family:'JetBrains Mono',monospace">▎本周重大事件</h4>
+<div class="card card-red">
+<div class="card-title">美伊冲突第四周 — 4/6 deadline迫近</div>
+<div class="card-body">美国对伊朗军事行动"Epic Fury"持续进行中。Brent原油从$74飙升至$105+。海峡通行受阻，航运公司绕行非洲南端。Trump设定4月6日为对伊最后通牒。VIX突破30反映市场对deadline结果的极度不确定性。本周油价再升3.4%，但黄金+2.6%的反弹值得关注——可能是避险叙事重新校准的信号。</div>
+</div>
+<div class="card card-green">
+<div class="card-title">3月27日 — 1-2月工业利润数据发布</div>
+<div class="card-body">利润+15.2%远超市场预期，是2026年迄今最重要的微观经济数据。高技术制造业利润+58.7%拉动全部工业利润增长7.9个百分点。私营企业+37.2%，中型企业+31.5%。但汽车-30.2%和黑色金属增亏揭示K型分化加剧。</div>
+</div>
+</section>
+
+<!-- ==================== SECTION 2: CYCLES ==================== -->
+<section class="section">
+<div class="sec-num">02</div>
+<div class="sec-title">周期定位更新</div>
+<div class="sec-sub">CYCLE POSITIONING · 宏观策略分析师 + 量化分析师</div>
+
+<table>
+<tr><th>周期</th><th>上周定位</th><th>本周定位</th><th>变化</th></tr>
+<tr><td>K-Wave</td><td>第6波春季开启</td><td>第6波春季开启</td><td style="color:var(--text3)">UNCHANGED</td></tr>
+<tr><td>债务超级周期</td><td>峰值-货币化</td><td>峰值-货币化</td><td style="color:var(--text3)">UNCHANGED</td></tr>
+<tr><td>人口周期</td><td>中国老龄化加速</td><td>中国老龄化加速</td><td style="color:var(--text3)">UNCHANGED</td></tr>
+<tr><td>朱格拉(设备)</td><td>AI+出海双驱动扩张</td><td>AI+出海双驱动扩张</td><td style="color:var(--text3)">UNCHANGED（装备制造+23.5%验证）</td></tr>
+<tr><td>库兹涅茨(地产)</td><td>中国调整中段</td><td>中国调整中段</td><td style="color:var(--text3)">UNCHANGED（黑色金属增亏验证）</td></tr>
+<tr><td>信贷周期</td><td>美晚期/中修复</td><td>美晚期/中修复</td><td style="color:var(--text3)">UNCHANGED</td></tr>
+<tr style="background:rgba(74,222,128,0.05)"><td><strong>基钦(库存)</strong></td><td>被动去库存末尾</td><td style="color:var(--green);font-weight:700">被动补库存初期</td><td><span class="sig-change sig-up">↑ UPGRADED</span></td></tr>
+<tr style="background:rgba(250,204,21,0.05)"><td><strong>美林时钟</strong></td><td>美滞胀/中衰退-复苏过渡</td><td style="color:var(--yellow);font-weight:700">美滞胀深化/中复苏初期靠拢</td><td><span class="sig-change sig-new">⟳ UPDATED</span></td></tr>
+<tr><td>政策周期</td><td>中美错位(中松美紧)</td><td>中美错位(中松美紧)</td><td style="color:var(--text3)">UNCHANGED（VIX>30加剧错位）</td></tr>
+</table>
+
+<div class="highlight">
+<div class="highlight-title">周期定位总结</div>
+<p style="font-size:13px;color:var(--text2)">本周有<strong style="color:var(--green)">两个周期信号发生变化</strong>：①基钦周期从"被动去库存末尾"正式升级为"被动补库存初期"——工业利润+15.2%、毛利润+6.9%、成本下降、中游化工/有色利润爆发构成充分证据；②美林时钟中国侧从"过渡区"向"复苏初期"靠拢——盈利广谱修复（24/41行业增长）是关键证据。美国侧因VIX突破30进一步确认滞胀深化。</p>
+</div>
+</section>
+
+<!-- ==================== SECTION 3: INDICATORS ==================== -->
+<section class="section">
+<div class="sec-num">03</div>
+<div class="sec-title">领先指标信号变化</div>
+<div class="sec-sub">SIGNAL CHANGES · 量化分析师</div>
+
+<table>
+<tr><th>指标</th><th>上周</th><th>本周</th><th>触发原因</th><th>投资含义</th></tr>
+<tr style="background:rgba(74,222,128,0.04)">
+<td>工业企业毛利润增速</td><td><span class="dot dot-y"></span>黄</td><td><span class="dot dot-g"></span><strong>绿</strong></td>
+<td>毛利润从上年持平→+6.9%</td><td>盈利拐点确认——EPS改善将逐步体现</td>
+</tr>
+<tr style="background:rgba(74,222,128,0.04)">
+<td>中游化工/有色利润</td><td><span class="dot dot-y"></span>黄</td><td><span class="dot dot-g"></span><strong>绿</strong></td>
+<td>化工+35.9%，有色+150%</td><td>补库存链条中游已爆发——PPI转正的先导信号</td>
+</tr>
+<tr style="background:rgba(74,222,128,0.04)">
+<td>补库存置信度</td><td>75%</td><td style="color:var(--green);font-weight:700">80%</td>
+<td>利润+存货+成本三重验证</td><td>距100%确认仅差PPI同比转正（4-5月预期）</td>
+</tr>
+<tr style="background:rgba(232,93,74,0.04)">
+<td>VIX波动率体制</td><td><span class="dot dot-y"></span>波动(28)</td><td><span class="dot dot-r"></span><strong>危机(31)</strong></td>
+<td>VIX突破30阈值</td><td><span class="tag tag-action">ACTION</span>启动危机体制——收紧止损+降低仓位</td>
+</tr>
+<tr style="background:rgba(232,93,74,0.04)">
+<td>组合风险评级</td><td><span class="dot dot-y"></span>AMBER</td><td><span class="dot dot-r"></span><strong>RED</strong></td>
+<td>VIX>30+油价>$100+A股跌破3900</td><td><span class="tag tag-action">ACTION</span>全面进入防御模式</td>
+</tr>
+</table>
+<p style="font-size:12px;color:var(--text3);margin-top:8px">其余31个领先指标本周无信号灯变色。</p>
+</section>
+
+<!-- ==================== SECTION 4: NARRATIVE ==================== -->
+<section class="section">
+<div class="sec-num">04</div>
+<div class="sec-title">跨资产叙事解读</div>
+<div class="sec-sub">NARRATIVE DECODING · 全体团队</div>
+
+<p style="font-size:14px;color:var(--text);margin-bottom:16px">本周市场在交易什么？</p>
+
+<table>
+<tr><th>叙事</th><th>上周权重</th><th>本周权重</th><th>变化与证据</th></tr>
+<tr><td>供给冲击型滞胀</td><td>85%</td><td style="color:var(--red);font-weight:700">90%</td><td>VIX突破30+油价$105+美股连跌=滞胀交易深化</td></tr>
+<tr><td>中国资产脱钩</td><td>75%</td><td style="color:var(--green);font-weight:700">78%</td><td>工业利润+15.2%强化基本面支撑，但A股本周亦下跌</td></tr>
+<tr><td>流动性紧缩预警</td><td>60%</td><td style="color:var(--red);font-weight:700">70%</td><td>VIX>30=流动性收紧加速，所有风险资产承压</td></tr>
+<tr><td>能源体制转换</td><td>70%</td><td>70%</td><td>油价维持高位但未进一步飙升=叙事稳定</td></tr>
+</table>
+
+<h4 style="color:var(--accent);font-size:13px;margin:24px 0 10px;font-family:'JetBrains Mono',monospace">▎三因子读数</h4>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--red)">
+<div style="font-size:11px;color:var(--text3)">增长因子</div>
+<div style="font-size:16px;font-weight:700;color:var(--red)">负面（但中国例外）</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">美股下跌+VIX>30=全球增长预期恶化。但中国工业利润+15.2%是独立的正面信号。</div>
+</div>
+<div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--red)">
+<div style="font-size:11px;color:var(--text3)">通胀因子</div>
+<div style="font-size:16px;font-weight:700;color:var(--red)">强烈正面</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">Brent $105+美债收益率上行=市场继续定价通胀飙升。中国CPI仅1.3%仍有缓冲。</div>
+</div>
+<div class="card" style="flex:1;min-width:200px;border-left:3px solid var(--red)">
+<div style="font-size:11px;color:var(--text3)">风险偏好因子</div>
+<div style="font-size:16px;font-weight:700;color:var(--red)">极度负面</div>
+<div style="font-size:11px;color:var(--text2);margin-top:4px">VIX 31+比特币-15%月跌+美股连续下跌=市场在疯狂去风险化。</div>
+</div>
+</div>
+
+<div class="highlight">
+<div class="highlight-title">本周最重要的跨资产信号</div>
+<p style="font-size:13px;color:var(--text2)"><strong style="color:var(--green)">黄金本周反弹+2.6%——这可能是叙事转折的早期信号。</strong>过去三周黄金因油价悖论（高油价→高通胀→高利率→压制黄金）持续下跌。但本周在VIX突破30后，黄金重新获得避险买盘。如果黄金能在VIX>30环境中持续走强，说明市场避险逻辑正在从"美元独大"向"美元+黄金双避险"回归——这将是黄金悖论缓解的重要信号。</p>
+</div>
+</section>
+
+<!-- ==================== SECTION 5: ALLOCATION ==================== -->
+<section class="section">
+<div class="sec-num">05</div>
+<div class="sec-title">配置建议</div>
+<div class="sec-sub">ALLOCATION UPDATE · 投资总监(CIO)</div>
+
+<table>
+<tr><th>资产</th><th>上周权重</th><th>本周建议</th><th>调整理由</th></tr>
+<tr style="background:rgba(232,93,74,0.04)"><td>A股科技</td><td>15%</td><td style="color:var(--red)">12%</td><td><span class="tag tag-action">ACTION</span>VIX>30危机体制→权益降仓3%转入现金</td></tr>
+<tr style="background:rgba(232,93,74,0.04)"><td>A股出海</td><td>8%</td><td style="color:var(--red)">6%</td><td><span class="tag tag-action">ACTION</span>降仓2%转入现金</td></tr>
+<tr><td>A股能源</td><td>10%</td><td>10%</td><td>油价$105+煤炭逆市，维持</td></tr>
+<tr><td>A股红利</td><td>10%</td><td>10%</td><td>波动率高企→红利压舱石价值凸显</td></tr>
+<tr><td>港股</td><td>15%</td><td style="color:var(--red)">13%</td><td>流动性偏好下降→降2%</td></tr>
+<tr><td>中国国债</td><td>15%</td><td>15%</td><td>避风港+宽松周期=维持</td></tr>
+<tr style="background:rgba(74,222,128,0.04)"><td>黄金</td><td>12%</td><td>12%</td><td>本周反弹+2.6%，维持仓位，$3,800止损不变</td></tr>
+<tr style="background:rgba(74,222,128,0.04)"><td><strong>现金</strong></td><td>10%</td><td style="color:var(--green);font-weight:700"><strong>17%</strong></td><td><span class="tag tag-action">ACTION</span>VIX>30→现金从10%加至17%（最高防御）</td></tr>
+<tr><td>可转债</td><td>5%</td><td>5%</td><td>维持</td></tr>
+</table>
+
+<div class="card card-red" style="margin-top:16px">
+<div class="card-title">⚠️ 本周操作指令（VIX>30触发）</div>
+<div class="card-body">
+<strong>1. 现金从10%提升至17%</strong> — 来源：科技-3%、出海-2%、港股-2%<br>
+<strong>2. 所有新建仓位使用标准50%仓位</strong> — 危机体制下新仓位减半<br>
+<strong>3. 止损宽度收紧</strong> — 个股止损从-15%/-25%收紧至-10%/-18%<br>
+<strong>4. 再平衡频率提升至周度</strong> — 从月度改为每周检视一次<br>
+<strong>5. 黄金$3,800硬止损维持</strong> — 本周反弹但悖论未完全消除
+</div>
+</div>
+</section>
+
+<!-- ==================== SECTION 6: RISK ==================== -->
+<section class="section">
+<div class="sec-num">06</div>
+<div class="sec-title">风险检视</div>
+<div class="sec-sub">RISK CONTROL · 风控官</div>
+
+<table>
+<tr><th>检查项</th><th>状态</th><th>评级</th></tr>
+<tr><td>单一最大头寸</td><td>科技12%（调整后），含多个标的</td><td><span class="dot dot-g"></span>GREEN</td></tr>
+<tr><td>行业集中度</td><td>能源相关~15%（含煤炭）</td><td><span class="dot dot-g"></span>GREEN</td></tr>
+<tr><td>VIX体制</td><td style="color:var(--red);font-weight:700">31.05 — 已突破30阈值</td><td><span class="dot dot-r"></span>RED — 已触发体制切换</td></tr>
+<tr><td>A股支撑位</td><td>上证~3,870，离3,850筹码密集区极近</td><td><span class="dot dot-r"></span>RED</td></tr>
+<tr><td>油价敏感暴露</td><td>约20%组合对油价方向敏感</td><td><span class="dot dot-y"></span>AMBER</td></tr>
+<tr><td>黄金浮亏</td><td>本周反弹至$4,524，浮亏收窄至~15%</td><td><span class="dot dot-y"></span>AMBER — 未触及$3,800止损</td></tr>
+<tr><td>组合月度回撤</td><td>估算约-5%（3月）</td><td><span class="dot dot-y"></span>AMBER（<-8%月度线）</td></tr>
+<tr><td>现金比例</td><td>调整后17%</td><td><span class="dot dot-g"></span>GREEN（危机体制要求15-20%）</td></tr>
+</table>
+
+<div style="margin-top:16px;padding:16px 20px;background:rgba(232,93,74,0.08);border:1px solid rgba(232,93,74,0.2);border-radius:8px">
+<div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:6px">综合风险评级：RED（上周AMBER → 本周RED）</div>
+<div style="font-size:13px;color:var(--text2);line-height:1.7">
+VIX突破30是评级升级的直接原因。在RED评级下：(1)不主动加仓任何风险资产；(2)所有持仓收紧止损；(3)现金保持17%以上；(4)等待VIX回落至25以下或4/6 deadline结果明朗后再重新评估。
+</div>
+</div>
+</section>
+
+<!-- ==================== SECTION 7: NEXT WEEK ==================== -->
+<section class="section">
+<div class="sec-num">07</div>
+<div class="sec-title">下周关注</div>
+<div class="sec-sub">WEEK AHEAD · 全体团队</div>
+
+<table>
+<tr><th>日期</th><th>事件</th><th>预期影响</th><th>操作预案</th></tr>
+<tr style="background:rgba(232,93,74,0.04)"><td style="color:var(--red);font-weight:700">3/31(周一)</td><td><strong>中国3月官方PMI</strong></td><td>EPMI已飙升至57.6，官方PMI预期大幅反弹至50+</td><td>PMI>50.5 = 补库存第二个确认信号→待VIX回落后加仓周期股</td></tr>
+<tr><td>4/1(周二)</td><td>RatingDog制造业PMI</td><td>2月已达52.1（5年最强），3月预期维持高位</td><td>与官方PMI交叉验证</td></tr>
+<tr><td>4/1(周二)</td><td>美国ISM制造业PMI</td><td>关注是否因油价冲击跌破48</td><td>ISM<48 = 美国滞胀深化确认</td></tr>
+<tr><td>4/3(周四)</td><td>RatingDog服务业PMI</td><td>2月服务业PMI为52.0</td><td>服务业韧性验证</td></tr>
+<tr style="background:rgba(232,93,74,0.06)"><td style="color:var(--red);font-weight:700">4/6(周日)</td><td><strong>Trump对伊最后通牒到期</strong></td><td>本轮全球动荡的核心催化剂</td><td>停火 = 全面risk-on反转交易；升级 = 进一步加码防御</td></tr>
+<tr><td>4/9(周三)</td><td>中国3月CPI/PPI</td><td>PPI能否加速收窄是补库存的关键验证</td><td>PPI环比>0.5% = 主动补库存信号强化</td></tr>
+</table>
+
+<div class="card card-accent" style="margin-top:16px">
+<div class="card-title">下周最重要的两件事</div>
+<div class="card-body">
+<strong>1. 3/31中国3月PMI</strong> — 如果回升至50以上（EPMI强烈暗示会），将是补库存的第二个确认信号（第一个是本周工业利润数据）。但在VIX>30的危机体制下，即使信号确认也不应立即大幅加仓——等待VIX回落后再执行。<br><br>
+<strong>2. 4/6 Trump deadline</strong> — 这是决定全球资产方向的分水岭。停火 = 油价回落+降息预期恢复+黄金/美股/港股反弹+VIX暴跌→解除危机体制。升级 = 油价突破$120+全球衰退风险陡升→维持RED评级并考虑进一步降仓。
+</div>
+</div>
+</section>
+
+<!-- ==================== SECTION 8: CIO COMMENTARY ==================== -->
+<section class="section" style="border-bottom:none">
+<div class="sec-num">08</div>
+<div class="sec-title">投资总监点评</div>
+<div class="sec-sub">CIO COMMENTARY</div>
+
+<div style="font-size:14px;line-height:2;color:var(--text)">
+<p>本周是整个投研体系建立以来<strong style="color:var(--accent)">最矛盾的一周</strong>——基本面给出了2026年以来最强的正面信号（工业利润+15.2%、高技术+58.7%、EPMI 57.6），但市场环境同时恶化到需要启动危机体制的程度（VIX突破30）。</p>
+
+<p style="margin-top:16px">这种矛盾恰恰验证了我们体系的核心判断：<strong style="color:var(--green)">中美周期的系统性错位</strong>。中国的微观盈利数据在改善、补库存在确认、出口结构在升级——而美国/全球在交易滞胀深化、流动性紧缩和地缘恐慌。两个经济体走在完全相反的方向上。</p>
+
+<p style="margin-top:16px">操作上的纪律是：<strong style="color:var(--red)">风控优先于alpha。</strong>即使我们对中国资产的中期前景越来越有信心（盈利拐点+补库存+政策宽松），在VIX>30的环境下也必须先防守。原因很简单——如果4/6 deadline导致冲突全面升级，即使基本面再好的市场也无法完全免疫全球性恐慌。</p>
+
+<p style="margin-top:16px">但我想特别强调：<strong style="color:var(--accent)">本周的基本面数据为4/6之后的布局提供了坚实的基础。</strong>无论deadline结果如何，中国工业企业盈利改善是已经发生的事实，补库存趋势是不可逆的（除非全球贸易崩溃）。一旦地缘不确定性消退，这些被暂时压制的正面信号将集中释放——届时我们手中17%的现金就是最宝贵的弹药。</p>
+
+<p style="margin-top:16px;padding:16px 20px;background:var(--surface);border-radius:8px;color:var(--accent);font-weight:600">
+一句话：先活下来（VIX>30 = 防守），再赚大钱（4/6后 = 带着基本面确认的弹药进攻）。
+</p>
+</div>
+</section>
+
+</div><!-- container -->
+
+<footer class="footer">
+<div class="container">
+<p>AI投研团队 · 宏观经济与大类资产周报 · W13 · 2026年3月24日-3月28日</p>
+<p style="margin-top:4px">本报告基于公开信息分析，仅供研究参考，不构成投资建议。</p>
+<p style="margin-top:4px;color:var(--accent)">归档路径：weekly-reports/2026/03/W13-0324-0328/</p>
+</div>
+</footer>
+
+</body>
+</html>

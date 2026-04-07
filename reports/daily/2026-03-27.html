@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宏观经济与大类资产日报 | 2026-03-27</title>
+<style>
+:root {
+  --color-up: #22c55e;
+  --color-down: #ef4444;
+  --color-neutral: #3b82f6;
+  --color-highlight: #f59e0b;
+  --color-star: #f59e0b;
+  --radius: 8px;
+}
+[data-theme="dark"] {
+  --bg-page: #0d1117; --bg-card: #161b22; --bg-card-alt: #1c2333;
+  --bg-stripe: #1e252f; --text-primary: #e6edf3; --text-secondary: #8b949e;
+  --border: #30363d; --nav-bg: rgba(13,17,23,.85);
+  --shadow: 0 2px 6px rgba(0,0,0,.3);
+  --bg-blockquote: #1c2333; --border-blockquote: var(--color-highlight);
+}
+[data-theme="light"] {
+  --bg-page: #f8f9fa; --bg-card: #ffffff; --bg-card-alt: #f1f3f5;
+  --bg-stripe: #f8f9fa; --text-primary: #1a1a2e; --text-secondary: #6b7280;
+  --border: #e5e7eb; --nav-bg: rgba(248,249,250,.85);
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --bg-blockquote: #fffbeb; --border-blockquote: var(--color-highlight);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  background: var(--bg-page); color: var(--text-primary);
+  line-height: 1.7; font-size: 15px;
+}
+.mono { font-family: "JetBrains Mono","SF Mono","Fira Code",monospace; }
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--nav-bg); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+nav .title { font-size: 17px; font-weight: 700; }
+nav .links { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+nav .links a { color: var(--text-secondary); text-decoration: none; transition: color .2s; }
+nav .links a:hover { color: var(--color-highlight); }
+.theme-btn {
+  background: var(--bg-card-alt); border: 1px solid var(--border);
+  color: var(--text-primary); border-radius: 6px; padding: 4px 12px;
+  cursor: pointer; font-size: 13px;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
+.section { margin-bottom: 28px; }
+.section-header {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 12px 16px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0;
+  user-select: none;
+}
+.section-header.collapsed { border-radius: var(--radius); }
+.section-header h2 { font-size: 17px; font-weight: 700; flex: 1; }
+.section-header .toggle { font-size: 12px; color: var(--text-secondary); transition: transform .2s; }
+.section-header.collapsed .toggle { transform: rotate(-90deg); }
+.section-body {
+  background: var(--bg-card); border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius); padding: 16px; overflow: hidden;
+  transition: max-height .3s ease, opacity .2s ease;
+}
+.section-body.hidden { display: none; }
+
+/* Tabs */
+.tab-group { margin-bottom: 16px; }
+.tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 14px; }
+.tab-btn {
+  padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: 600;
+  color: var(--text-secondary); border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all .15s; background: none; border-top: none;
+  border-left: none; border-right: none;
+}
+.tab-btn.active { color: var(--color-highlight); border-bottom-color: var(--color-highlight); }
+.tab-panel { display: none; opacity: 0; transition: opacity .15s; }
+.tab-panel.active { display: block; opacity: 1; }
+
+/* Cards inside sections */
+.card {
+  background: var(--bg-card-alt); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 12px; border: 1px solid var(--border);
+}
+.card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--color-highlight); }
+.card h4 { font-size: 14px; font-weight: 600; margin: 10px 0 6px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; }
+th { background: var(--bg-stripe); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+tr:hover td { background: var(--bg-stripe); }
+
+/* Colors */
+.up { color: var(--color-up); }
+.down { color: var(--color-down); }
+.neutral { color: var(--color-neutral); }
+.highlight { color: var(--color-highlight); font-weight: 600; }
+
+/* Tags */
+.tag {
+  display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  font-weight: 600; margin-right: 4px; vertical-align: middle;
+}
+.tag-up { background: rgba(34,197,94,.15); color: var(--color-up); }
+.tag-down { background: rgba(239,68,68,.15); color: var(--color-down); }
+.tag-neutral { background: rgba(59,130,246,.15); color: var(--color-neutral); }
+
+/* Blockquote for deep analysis */
+blockquote {
+  background: var(--bg-blockquote); border-left: 3px solid var(--border-blockquote);
+  padding: 12px 16px; margin: 10px 0; border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 14px; line-height: 1.8;
+}
+blockquote .bq-title { font-weight: 700; color: var(--color-highlight); margin-bottom: 4px; }
+
+/* Summary bullets */
+.summary-item {
+  padding: 10px 14px; margin-bottom: 8px; border-radius: var(--radius);
+  background: var(--bg-card-alt); border: 1px solid var(--border);
+  font-size: 14px; line-height: 1.7;
+}
+.summary-item .logic { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+/* Footer */
+.footer { font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px 0; border-top: 1px solid var(--border); margin-top: 30px; }
+
+/* Stars */
+.star { color: var(--color-star); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  nav .links { display: none; }
+  .container { padding: 12px; }
+  table { font-size: 12px; }
+  th, td { padding: 5px 6px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="title">📊 宏观经济与大类资产日报</span>
+  <div class="links">
+    <a href="#sec1">核心摘要</a>
+    <a href="#sec2">新闻政策</a>
+    <a href="#sec3">数据追踪</a>
+    <a href="#sec4">市场回顾</a>
+    <a href="#sec5">策略观点</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:13px;color:var(--text-secondary);" class="mono">2026-03-27 Fri</span>
+    <button class="theme-btn" onclick="toggleTheme()">🌓 切换主题</button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ============ 一、核心摘要 ============ -->
+<div class="section" id="sec1">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2>一、隔夜与早间核心摘要</h2>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+
+    <div class="summary-item">
+      <span class="tag tag-down">利空</span> <span class="tag tag-neutral">股票 · 商品</span>
+      <strong>美股大跌：标普跌1.74%、纳指跌2.38%，创美伊开战以来最大单日跌幅</strong>，以色列空袭伊朗伊斯法罕、美伊谈判破裂，市场恐慌情绪急剧升温。
+      <div class="logic">【一句话逻辑】攻击伊朗能源设施期限临近且外交斡旋无果，风险资产全线承压，VIX飙升。</div>
+    </div>
+
+    <div class="summary-item">
+      <span class="tag tag-down">利空</span> <span class="tag tag-neutral">股票 · 汇率</span>
+      <strong>A股缩量回调：沪指跌1.09%失守3900，港股恒生科技指数跌3.28%</strong>，科技股遭抛售，两市成交跌破2万亿，结束28天连续站稳纪录。
+      <div class="logic">【一句话逻辑】内资主力净流出780亿+，高位题材退潮引发风格切换，但北向资金逆势流入低位蓝筹。</div>
+    </div>
+
+    <div class="summary-item">
+      <span class="tag tag-up">利多</span> <span class="tag tag-neutral">利率</span>
+      <strong>国债期货全线收涨，30年期主力涨0.22%</strong>，避险情绪推动利率债走强，10年期国债收益率维持1.78%低位。
+      <div class="logic">【一句话逻辑】地缘风险升温+股市回调强化避险需求，长端利率债成为资金避风港。</div>
+    </div>
+
+    <div class="summary-item">
+      <span class="tag tag-down">利空</span> <span class="tag tag-neutral">商品 · 通胀</span>
+      <strong>原油再度冲高：布油盘中触及106美元/桶，WTI重返93美元上方</strong>，霍尔木兹海峡持续封锁，OPEC+增产不及市场所需。
+      <div class="logic">【一句话逻辑】伊朗拒绝美方15点停战方案且以色列扩大打击，供应中断风险未消，能源通胀螺旋延续。</div>
+    </div>
+
+    <div class="summary-item">
+      <span class="tag tag-neutral">中性</span> <span class="tag tag-neutral">利率 · 汇率</span>
+      <strong>美联储3月维持利率3.50-3.75%不变，点阵图偏鹰</strong>，年内降息预期大幅缩减至1次，市场定价9-10月才可能首次降息。
+      <div class="logic">【一句话逻辑】油价推升通胀预测至3.0%、GDP增速下修至2.1%，美联储在滞胀困境中选择"按兵不动"。</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ 二、重大新闻与政策信号 ============ -->
+<div class="section" id="sec2">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2>二、重大新闻与政策信号</h2>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="tab-group" id="tg-news">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="news-cn" onclick="switchTab('tg-news','news-cn')">🇨🇳 中国</button>
+        <button class="tab-btn" data-tab="news-gl" onclick="switchTab('tg-news','news-gl')">🌍 海外</button>
+      </div>
+
+      <!-- 中国 Tab -->
+      <div class="tab-panel active" id="news-cn">
+        <div class="card">
+          <h3>国内政策与产业动态</h3>
+          <p><strong>1. 央行延续净回笼操作，资金面维持中性偏松。</strong>3月下旬央行持续通过7天期逆回购调控流动性，DR007在1.44%附近运行，略低于政策利率1.50%，反映央行有意维持宽松但克制的流动性环境。远期售汇风险准备金率已于3月2日从20%下调至0，释放汇率弹性信号。</p>
+          <p><strong>2. 十家理财子公司集体喊话：</strong>A股、黄金长期配置价值凸显，理性看待"固收+"净值波动。人民币固收类产品近三月平均最大回撤仅0.07%，避险属性突出。</p>
+          <p><strong>3. 券商密集发声"无需恐慌"：</strong>中信证券预计2026年实际GDP增速保持4.9%左右，全年呈"V"型节奏。华泰证券提示地缘冲突持续时间是关键变量，建议均衡配置。</p>
+          <p><strong>4. A股资金结构分化：</strong>内资主力净流出780亿+集中抛售高位科技股，北向资金逆势净流入布局低位蓝筹和防御板块，市场完成一次"风格大换血"。</p>
+        </div>
+        <blockquote>
+          <div class="bq-title">【深度研判】A股风格切换的底层逻辑</div>
+          <p>本轮A股回调的核心矛盾并非基本面恶化，而是<strong>地缘冲击→油价高企→全球滞胀预期→海外风险偏好骤降→情绪传导至国内高位题材股获利了结</strong>的链条。观察3月26日的资金行为——内资主力净流出780亿元集中抛售AI算力、半导体、CPO等前期强势板块，而北向资金逆势净流入低位蓝筹（电力、锂电、能源金属），这恰恰说明：<strong>外资视A股当前估值具有安全边际，回调是结构性再平衡而非系统性风险。</strong>两市成交跌破2万亿至1.96万亿，缩量特征表明抛压主要来自获利盘而非恐慌性出逃。技术面MACD绿柱收敛、KDJ超卖拐头，叠加3880-3860区域的密集成交支撑，短期进一步大幅下探的概率有限。</p>
+        </blockquote>
+      </div>
+
+      <!-- 海外 Tab -->
+      <div class="tab-panel" id="news-gl">
+        <div class="card">
+          <h3>美伊冲突最新进展（核心风险事件）</h3>
+          <p><strong>1. 以色列空袭伊朗伊斯法罕基础设施：</strong>以色列国防军3月26日宣布对伊朗伊斯法罕发动大规模袭击，同日黎巴嫩真主党用导弹袭击以色列国防部总部，中东局势进一步升级。</p>
+          <p><strong>2. 美伊谈判陷入僵局：</strong>美方通过巴基斯坦提交15点停战方案遭伊朗拒绝。伊朗提出5项停战条件，拒绝美方设定的时间表。特朗普向顾问表示希望"快速"结束战争，但双方分歧巨大。</p>
+          <p><strong>3. 霍尔木兹海峡持续封锁：</strong>伊朗宣布将重新界定海峡通行规则，"与伊朗敌对力量相关的任何一方都无权通行"。</p>
+          <p><strong>4. 全球石油储备释放：</strong>IEA成员国同意释放4亿桶战略石油储备；日本3月26日起释放国家石油储备；OPEC+自4月起增产20.6万桶/日（超预期的13.7万桶/日）。</p>
+        </div>
+        <div class="card">
+          <h3>美联储与全球央行</h3>
+          <p><strong>美联储3月FOMC：</strong>维持利率3.50-3.75%不变（11:1通过，理事米兰反对主张降息25bp）。点阵图中值显示2026年仅降息1次（12月会议时为3次），GDP预测下修至2.1%，核心PCE上修至2.7%。市场定价降息推迟至9-10月，加息概率升至35%。</p>
+          <p><strong>特朗普拟换帅：</strong>计划提名前美联储理事Kevin Warsh接替鲍威尔。</p>
+          <p><strong>欧洲央行：</strong>法国央行下调2026年经济增长预期并上调通胀预估；意大利考虑将增长率从0.7%下调至0.5%。</p>
+        </div>
+        <div class="card">
+          <h3>科技产业</h3>
+          <p>ARM发布首款量产级AI处理器，股价暴涨15%+；SpaceX考虑IPO募资750亿美元；英特尔与AMD计划CPU价格上调10-15%。</p>
+        </div>
+        <blockquote>
+          <div class="bq-title">【深度研判】美伊冲突对全球流动性与风险偏好的深层影响</div>
+          <p>当前美伊冲突已从"短促战争"演变为"持久消耗"格局，核心变量是<strong>霍尔木兹海峡封锁的持续时间</strong>。该海峡承载全球约20%原油运输量，即使IEA释放4亿桶战略储备+OPEC增产，也仅能覆盖约3-4个月的供给缺口。若封锁延续至Q2末，布油将稳定在100美元/桶上方，推动美国CPI突破3.5%，迫使美联储在"控通胀"与"防衰退"之间做出更艰难的选择。<strong>美元潮汐效应正在显现</strong>：10年期美债收益率攀升至4.38%，持有零息资产（黄金）的机会成本激增，导致黄金自1月高点5595美元已回撤超20%——这是典型的"流动性紧缩期"特征，而非避险逻辑失效。对中国市场而言，人民币在6.90附近的稳定表现和外资逆势流入，表明中国资产正被重新定价为地缘冲突中的"相对安全港"。</p>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 三、宏观数据追踪 ============ -->
+<div class="section" id="sec3">
+  <div class="section-header collapsed" onclick="toggleSection(this)">
+    <h2>三、宏观数据追踪</h2>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body hidden">
+    <div class="tab-group" id="tg-data">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="data-cn" onclick="switchTab('tg-data','data-cn')">🇨🇳 中国</button>
+        <button class="tab-btn" data-tab="data-gl" onclick="switchTab('tg-data','data-gl')">🌍 海外</button>
+      </div>
+
+      <!-- 中国数据 -->
+      <div class="tab-panel active" id="data-cn">
+        <div class="card">
+          <h3>近期已公布重要数据</h3>
+          <table>
+            <thead><tr><th>指标</th><th>公布值</th><th>前值</th><th>预期</th><th>偏差</th></tr></thead>
+            <tbody>
+              <tr><td>1-2月工业增加值同比</td><td class="mono up"><strong>6.3%</strong></td><td class="mono">5.8%</td><td class="mono">5.9%</td><td class="up">▲ 超预期</td></tr>
+              <tr><td>1-2月固定资产投资同比</td><td class="mono down"><strong>1.8%</strong></td><td class="mono">3.2%</td><td class="mono">2.5%</td><td class="down">▼ 不及预期</td></tr>
+              <tr><td>1-2月社零同比</td><td class="mono down"><strong>2.8%</strong></td><td class="mono">3.7%</td><td class="mono">3.5%</td><td class="down">▼ 不及预期</td></tr>
+              <tr><td>2月CPI同比</td><td class="mono up"><strong>1.3%</strong></td><td class="mono">0.5%</td><td class="mono">0.9%</td><td class="up">▲ 超预期</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote>
+          <div class="bq-title">【数据穿透分析】生产强、需求弱的结构性矛盾</div>
+          <p>1-2月数据呈现<strong>"生产端超预期、需求端低迷"</strong>的典型分化：工业增加值6.3%大幅好于预期，但固定资产投资仅1.8%（地产投资拖累为主因），社零2.8%不及预期反映消费修复乏力。CPI同比升至1.3%主要受春节错位和输入性能源通胀推升，核心CPI仍处低位。<strong>当前经济所处的周期位置是"弱复苏中段+输入性通胀扰动"</strong>，这意味着：①货币政策仍有降准降息空间但节奏受油价掣肘；②财政发力是稳增长的核心抓手，关注后续专项债发行节奏和基建投资加速。</p>
+        </blockquote>
+        <div class="card">
+          <h3>📅 今日待公布数据（3月27日）</h3>
+          <table>
+            <thead><tr><th>时间</th><th>指标</th><th>预期</th><th>重要性</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">09:30</td><td>3月中旬流通领域重要生产资料价格</td><td>—</td><td><span class="star">★★</span></td></tr>
+            </tbody>
+          </table>
+          <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">今日国内无重磅宏观数据发布，关注生产资料价格变动对PPI趋势的指引。</p>
+        </div>
+      </div>
+
+      <!-- 海外数据 -->
+      <div class="tab-panel" id="data-gl">
+        <div class="card">
+          <h3>近期已公布重要数据</h3>
+          <table>
+            <thead><tr><th>指标</th><th>公布值</th><th>前值</th><th>预期</th><th>偏差</th></tr></thead>
+            <tbody>
+              <tr><td>美国初请失业金人数（万）</td><td class="mono neutral">21.0</td><td class="mono">22.3</td><td class="mono">22.0</td><td class="neutral">基本符合</td></tr>
+              <tr><td>美联储3月利率决议（上限）</td><td class="mono neutral">3.75%</td><td class="mono">3.75%</td><td class="mono">3.75%</td><td class="neutral">符合预期</td></tr>
+              <tr><td>美联储2026年降息次数（点阵图中值）</td><td class="mono highlight"><strong>1次</strong></td><td class="mono">3次(12月)</td><td class="mono">2次</td><td class="down">▼ 偏鹰</td></tr>
+              <tr><td>美联储2026年GDP增速预测</td><td class="mono down"><strong>2.1%</strong></td><td class="mono">2.3%</td><td class="mono">—</td><td class="down">▼ 下修</td></tr>
+              <tr><td>美联储2026年核心PCE预测</td><td class="mono down"><strong>2.7%</strong></td><td class="mono">2.5%</td><td class="mono">—</td><td class="down">▼ 上修（利空）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote>
+          <div class="bq-title">【数据穿透分析】美联储"滞胀困局"加深</div>
+          <p>3月FOMC最大的信息增量是<strong>点阵图的鹰派转向</strong>：认为2026年降息≥2次的票委从8人骤降至5人，认为仅降1次的从4人增至7人。GDP下修至2.1%+整体通胀上修至3.0%的组合，标志着美联储正式进入"滞胀管理"模式。初请失业金21万人仍属稳健，给了美联储继续"按兵不动"的底气。<strong>关键路径推演</strong>：若霍尔木兹海峡Q2仍未解封，油价维持100美元+，核心PCE可能突破3%，届时降息窗口将彻底关闭，甚至重新出现加息讨论——这是当前全球资产定价最大的尾部风险。</p>
+        </blockquote>
+        <div class="card">
+          <h3>📅 今日待公布数据（3月27日 北京时间）</h3>
+          <table>
+            <thead><tr><th>时间</th><th>指标</th><th>预期</th><th>重要性</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">20:30</td><td>美国Q4 GDP年化季环比终值</td><td class="mono">2.3%</td><td><span class="star">★★★</span></td></tr>
+              <tr><td class="mono">20:30</td><td>美国2月耐用品订单环比初值</td><td class="mono">—</td><td><span class="star">★★★</span></td></tr>
+              <tr><td class="mono">20:30</td><td>美国上周初请失业金人数</td><td class="mono">—</td><td><span class="star">★★</span></td></tr>
+            </tbody>
+          </table>
+          <p style="color:var(--text-secondary);font-size:13px;margin-top:6px;">重点关注GDP终值是否进一步下修，以及耐用品订单对制造业前景的指引。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 四、大类资产市场回顾 ============ -->
+<div class="section" id="sec4">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2>四、大类资产市场回顾</h2>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="tab-group" id="tg-market">
+      <div class="tab-bar">
+        <button class="tab-btn" data-tab="mkt-us" onclick="switchTab('tg-market','mkt-us')">🇺🇸 美国/海外</button>
+        <button class="tab-btn active" data-tab="mkt-cn" onclick="switchTab('tg-market','mkt-cn')">🇨🇳 中国</button>
+      </div>
+
+      <!-- 美国/海外 -->
+      <div class="tab-panel" id="mkt-us">
+
+        <div class="card">
+          <h3>4.1 美股（3月26日收盘 · 美东时间周四）</h3>
+          <table>
+            <thead><tr><th>指数</th><th>收盘</th><th>涨跌幅</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>道琼斯工业平均</td><td class="mono">45,960.11</td><td class="mono down">▼ -1.01%</td><td>创开战以来最大单日跌幅</td></tr>
+              <tr><td>标普500</td><td class="mono">6,477.16</td><td class="mono down">▼ -1.74%</td><td>跌破6500关口，创去年9月新低</td></tr>
+              <tr><td>纳斯达克综合</td><td class="mono">21,408.08</td><td class="mono down">▼ -2.38%</td><td>科技股领跌</td></tr>
+              <tr><td>欧洲斯托克50（前日）</td><td class="mono">—</td><td class="mono up">▲ +1.28%</td><td>欧股相对抗跌</td></tr>
+              <tr><td>德国DAX30（前日）</td><td class="mono">—</td><td class="mono up">▲ +1.52%</td><td>—</td></tr>
+            </tbody>
+          </table>
+          <p><strong>下跌驱动：</strong>特朗普原定"攻击伊朗能源设施"期限临近，美伊双方毫无谈拢迹象，以色列当日空袭伊斯法罕加剧恐慌。标普500实质性跌破6500整数关口。存储概念股（美光、闪迪跌超3%）领跌，科技板块全面承压。<strong>板块分化：</strong>能源板块逆势上涨（受益油价冲高），防御性板块（公用事业、必需消费）相对抗跌。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.2 美债</h3>
+          <table>
+            <thead><tr><th>期限</th><th>收益率</th><th>变动</th></tr></thead>
+            <tbody>
+              <tr><td>10年期美债</td><td class="mono">~4.38%</td><td class="mono down">▲ +5bp</td></tr>
+              <tr><td>2年期美债</td><td class="mono">~3.95%</td><td class="mono neutral">⚠️ 数据待确认</td></tr>
+              <tr><td>2s10s利差</td><td class="mono">~43bp</td><td class="mono">曲线维持陡峭化</td></tr>
+            </tbody>
+          </table>
+          <p>10年期收益率上行主要由<strong>通胀预期驱动</strong>而非实际利率——油价高企+美联储上修通胀预测推升TIPS盈亏平衡通胀率。期限溢价上升反映市场对财政可持续性和通胀持续性的担忧加深。收益率曲线维持陡峭化形态，短端受降息预期延后锚定、长端受通胀预期推升。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.3 海外大宗商品</h3>
+          <table>
+            <thead><tr><th>品种</th><th>价格</th><th>涨跌幅</th><th>归因</th></tr></thead>
+            <tbody>
+              <tr><td>WTI原油</td><td class="mono">93.45 美元/桶</td><td class="mono down">▲ +3.5%</td><td>霍尔木兹海峡封锁+以色列空袭</td></tr>
+              <tr><td>布伦特原油</td><td class="mono">106.07 美元/桶</td><td class="mono down">▲ +3.8%</td><td>谈判破裂升级风险溢价</td></tr>
+              <tr><td>COMEX黄金</td><td class="mono">~4,412 美元/盎司</td><td class="mono down">▼ -2.5%</td><td>美债收益率上行压制</td></tr>
+              <tr><td>现货黄金</td><td class="mono">~4,430 美元/盎司</td><td class="mono down">▼</td><td>自1月高点5595累计回撤21%</td></tr>
+            </tbody>
+          </table>
+          <p><strong>原油：</strong>供给侧驱动为主。IEA释放4亿桶战略储备+OPEC+4月增产20.6万桶/日（超预期），但仍无法完全对冲霍尔木兹海峡封锁导致的日均200-300万桶缺口。日本3月26日起释放国家石油储备，短期对油价形成边际压制。<strong>黄金：</strong>典型的"流动性紧缩杀估值"——美债收益率4.38%使零息黄金持有成本激增，叠加美元走强，金融属性主导短期走弱。但中长期看，全球央行购金趋势和地缘不确定性仍是黄金的核心支撑。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.4 外汇</h3>
+          <table>
+            <thead><tr><th>指标</th><th>数值</th><th>变动</th></tr></thead>
+            <tbody>
+              <tr><td>美元指数（DXY）</td><td class="mono">~99.23</td><td class="mono neutral">区间震荡</td></tr>
+            </tbody>
+          </table>
+          <p>美元指数3月下旬在98-105区间宽幅波动。避险需求支撑美元，但美国经济衰退风险升温（安永定义40%概率）和财政赤字担忧形成对冲。非美货币中，欧元和英镑受各自央行加息预期提振相对稳健。</p>
+        </div>
+      </div>
+
+      <!-- 中国 -->
+      <div class="tab-panel active" id="mkt-cn">
+
+        <div class="card">
+          <h3>4.5 A股与港股</h3>
+          <table>
+            <thead><tr><th>指数</th><th>收盘</th><th>涨跌幅</th></tr></thead>
+            <tbody>
+              <tr><td>上证指数</td><td class="mono">3,889.08</td><td class="mono down">▼ -1.09%</td></tr>
+              <tr><td>深证成指</td><td class="mono">—</td><td class="mono down">▼ -1.41%</td></tr>
+              <tr><td>创业板指</td><td class="mono">—</td><td class="mono down">▼ -1.34%</td></tr>
+              <tr><td>科创50</td><td class="mono">—</td><td class="mono down">▼ -2%+</td></tr>
+              <tr><td>恒生指数</td><td class="mono">—</td><td class="mono down">▼ -1.89%</td></tr>
+              <tr><td>恒生科技</td><td class="mono">—</td><td class="mono down">▼ -3.28%</td></tr>
+              <tr><td>富时A50</td><td class="mono">14,629.68</td><td class="mono down">▼ -0.53%</td></tr>
+            </tbody>
+          </table>
+          <p><strong>成交额：</strong><span class="mono">1.96万亿</span>，跌破2万亿结束连续28天站稳纪录，缩量显著。</p>
+          <p><strong>涨跌统计：</strong>仅915只上涨，4490+下跌，涨跌比1:5。涨停51家，跌停17家。</p>
+          <p><strong>北向资金：</strong>逆势净流入，专注低位蓝筹和防御板块。前日（3月25日）北向单日净流入超90亿元创3月新高。</p>
+          <p><strong>板块表现：</strong></p>
+          <p><span class="up">▲ 走强：</span>锂电、能源金属（融捷股份3连板龙头）、电力板块——受益于油价高企强化新能源替代逻辑+资源安全主题。</p>
+          <p><span class="down">▼ 走弱：</span>AI算力、半导体、CPO、光模块、软件开发全线大跌——高位题材获利了结+科创50跌超2%。</p>
+          <p><strong>港股：</strong>泡泡玛特跌超10%、快手大跌14%、智谱跌10%、MINIMAX跌超8%，AI应用和消费板块遭重创。资金博弈特征：<strong>内资获利出逃科技高位，外资逆势抄底低估蓝筹</strong>，风格从"高beta成长"切换至"低beta价值"。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.6 中国利率债</h3>
+          <table>
+            <thead><tr><th>品种</th><th>收盘</th><th>涨跌幅</th></tr></thead>
+            <tbody>
+              <tr><td>30年期国债期货 TL2606</td><td class="mono">111.430</td><td class="mono up">▲ +0.22%</td></tr>
+              <tr><td>10年期国债期货 T2606</td><td class="mono">108.245</td><td class="mono up">▲ +0.08%</td></tr>
+              <tr><td>5年期国债期货 TF2606</td><td class="mono">105.970</td><td class="mono up">▲ +0.07%</td></tr>
+              <tr><td>2年期国债期货 TS2606</td><td class="mono">102.510</td><td class="mono up">▲ +0.02%</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <thead><tr><th>收益率</th><th>水平</th><th>变动</th></tr></thead>
+            <tbody>
+              <tr><td>10年期国债收益率</td><td class="mono">~1.78%</td><td class="mono up">▼ -0.3bp</td></tr>
+            </tbody>
+          </table>
+          <p>国债期货全线收涨，<strong>长端涨幅领跑</strong>。核心博弈：资金面维持宽松（DR007低于政策利率）支撑短端，而"宽信用"效果迟迟未兑现（固投+社零双弱）使长端利率下行压力延续。10年期收益率1.78%已回到DR007（1.44%）以下区间，隐含了较为充分的降息预期。当前长端与短端博弈的核心矛盾在于：<strong>资金面极度宽松 vs 经济弱复苏 vs 潜在的财政供给冲击</strong>。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.7 资金面</h3>
+          <table>
+            <thead><tr><th>指标</th><th>利率</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>DR007</td><td class="mono">~1.44%</td><td>低于7天逆回购政策利率1.50%，资金宽松</td></tr>
+              <tr><td>DR001</td><td class="mono">~1.30%</td><td>隔夜资金充裕</td></tr>
+            </tbody>
+          </table>
+          <p><strong>央行OMO：</strong>近期维持小额逆回购操作（日均200亿级别），净回笼为主。3月中下旬累计净回笼超2500亿元，但资金利率仍低位运行，反映银行体系流动性充裕。<strong>季末关注点：</strong>MPA考核临近（3月最后一周），需关注资金面边际收敛风险，建议提前锁定跨季资金。</p>
+        </div>
+
+        <div class="card">
+          <h3>4.8 可转债</h3>
+          <p>中证转债指数跟随正股回调，前期高价转债和科技类转债跌幅居前。市场整体转股溢价率仍处于历史中位偏高水平。在股市缩量下跌环境下，<strong>双低策略</strong>（低价格+低溢价率）转债的防御价值凸显。高价高溢价品种面临正股回调和估值压缩的双重风险。</p>
+          <p style="color:var(--text-secondary);font-size:13px;">⚠️ 转债指数具体点位数据待确认</p>
+        </div>
+
+        <div class="card">
+          <h3>4.9 国内大宗与汇率</h3>
+          <table>
+            <thead><tr><th>品种</th><th>数值</th><th>变动/说明</th></tr></thead>
+            <tbody>
+              <tr><td>人民币中间价（USD/CNY）</td><td class="mono">6.9056</td><td class="mono">较上日6.9041微贬15点</td></tr>
+              <tr><td>在岸人民币</td><td class="mono">~6.90</td><td class="mono neutral">窄幅震荡</td></tr>
+              <tr><td>离岸人民币</td><td class="mono">~6.88</td><td class="mono up">偏强运行</td></tr>
+              <tr><td>WTI原油（日内）</td><td class="mono">91 美元/桶</td><td class="mono down">▼ -1.36%（盘中）</td></tr>
+              <tr><td>布伦特原油（日内）</td><td class="mono">98 美元/桶</td><td class="mono down">▼ -2.18%（盘中）</td></tr>
+              <tr><td>纽约期金</td><td class="mono">&lt;4520 美元/盎司</td><td class="mono down">▼ -1.43%</td></tr>
+            </tbody>
+          </table>
+          <p>人民币汇率在6.88-6.91区间保持稳定，年初至今升值超2%。央行已将远期售汇风险准备金率降至0%，释放汇率弹性空间。<strong>离岸持续强于在岸</strong>反映境外机构增持人民币资产意愿上升——在全球地缘冲突中，中国资产的避险属性正在被重新定价。机构预计Q2人民币在双向波动中维持偏强格局，年末或在6.85-6.87区间企稳。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 五、策略观点与投资机会 ============ -->
+<div class="section" id="sec5">
+  <div class="section-header collapsed" onclick="toggleSection(this)">
+    <h2>五、策略观点与潜在投资机会</h2>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body hidden">
+
+    <div class="card">
+      <h3>5.1 潜在投资机会挖掘</h3>
+
+      <h4>🔹 机会一：30年期国债——避险+政策宽松的黄金组合</h4>
+      <p><strong>目标资产：</strong>30年期国债期货（TL）/ 30年期利率债现券</p>
+      <p><strong>核心逻辑演绎：</strong></p>
+      <p>① <strong>宏观基本面支撑：</strong>国内经济处于"弱复苏中段"，固投1.8%和社零2.8%均不及预期，宽信用传导受阻，长端利率下行基础仍在。全球地缘冲突强化避险需求，债市获益于"安全资产溢价"。</p>
+      <p>② <strong>估值与拥挤度：</strong>10年期收益率1.78%虽处历史低位，但30年-10年期限利差仍有约25-30bp空间，长端相对中短端性价比尚可。久期策略交易拥挤度因3月回调已有所降温。</p>
+      <p>③ <strong>催化剂：</strong>季末资金面若波动后回落、4月降准预期升温、海外衰退风险传导压制国内风险偏好，均是长端利率下行的边际催化。</p>
+
+      <h4>🔹 机会二：A股高股息红利资产——防御与配置的最优选</h4>
+      <p><strong>目标资产：</strong>电力（长江电力、华能国际）、煤炭、银行（四大行+招商）、港股高股息ETF</p>
+      <p><strong>核心逻辑演绎：</strong></p>
+      <p>① <strong>宏观基本面支撑：</strong>经济弱复苏+油价高企的"类滞胀"环境历史上最利好高股息策略。企业盈利端受能源成本冲击，成长股盈利预期下修，红利股盈利稳定性溢价上升。</p>
+      <p>② <strong>估值与拥挤度：</strong>前期科技股热炒分流红利板块资金，当前红利指数估值回落至历史30%分位附近，股息率回升至4.5-5%区间，赔率改善明显。</p>
+      <p>③ <strong>催化剂：</strong>北向资金已在3月26日逆势加仓低位蓝筹；居民资金通过"固收+"渠道间接入市趋势加速；保险等长线资金年初以来持续增配高股息。</p>
+
+      <h4>🔹 机会三：锂电/能源金属——产业周期拐点+资源安全主线</h4>
+      <p><strong>目标资产：</strong>锂矿（天齐锂业、融捷股份）、电池（宁德时代）、相关转债</p>
+      <p><strong>核心逻辑演绎：</strong></p>
+      <p>① <strong>宏观基本面支撑：</strong>碳酸锂价格自低位反弹，行业库存处于去化尾声；能源安全在地缘冲突背景下重要性提升，新能源替代加速逻辑强化。</p>
+      <p>② <strong>估值与拥挤度：</strong>锂电板块经历2024-2025年深度调整，估值处于历史极低水平。融捷股份3连板表明市场资金开始关注板块拐点。</p>
+      <p>③ <strong>催化剂：</strong>油价持续高位强化新能源替代逻辑、欧盟碳关税政策推进、国内新能源汽车下乡政策预期。</p>
+    </div>
+
+    <div class="card">
+      <h3>5.2 固收+组合策略指导</h3>
+
+      <h4>📌 大势研判</h4>
+      <p>今日A股市场定性：<strong class="down">偏空 / 弱势震荡修复</strong></p>
+      <p>隔夜美股大跌（标普-1.74%、纳指-2.38%，创开战以来最大单日跌幅）将对今日开盘形成直接冲击，富时A50夜盘下跌指向低开。但沪指3880-3860区间有密集成交支撑，预计大幅下探后有望企稳，呈"低开震荡"格局。<strong>支撑位：3860 / 3830；压力位：3900 / 3930。</strong></p>
+
+      <h4>📌 股债性价比</h4>
+      <p>当前股债性价比（ERP）处于历史均值上方偏高水平——10年期国债1.78% vs 沪深300股息率约3.2%，股票对债券的超额回报仍有吸引力，但短期地缘风险压制权益估值扩张。<strong>大类资产配置建议：维持"债券为盾、权益结构性进攻"的哑铃型配置</strong>，略超配债券（55-60%），权益仓位控制在30-35%。</p>
+
+      <h4>📌 债券策略</h4>
+      <p><strong>久期策略：</strong>维持中性偏长久期，核心持仓10年+30年国债组合。理由：经济基本面支撑利率下行趋势未变（固投+社零弱于预期），资金面宽松（DR007低于政策利率），地缘风险强化避险需求。警惕季末资金面边际收敛和4月专项债供给放量对长端的短期扰动。</p>
+      <p><strong>信用策略：</strong>信用利差处于历史低位，性价比有限。建议维持中高等级（AAA/AA+）底仓，警惕地产链和城投弱区域信用风险。关注银行二级资本债和保险次级债的相对价值。</p>
+
+      <h4>📌 权益/转债策略</h4>
+      <p><strong>权益：</strong>占优风格切换至<strong>红利价值</strong>。建议降低科技成长仓位（AI算力、半导体获利了结），增配高股息红利（电力、煤炭、银行）和能源金属/锂电（产业拐点+资源安全）。港股高股息（中移动、中海油等）因估值洼地+汇率升值双重利好值得关注。招商证券建议的"哑铃型策略"——一端高股息红利防守，一端科技成长进攻——在当前环境下需向防守端倾斜。</p>
+      <p><strong>转债：</strong>市场转股溢价率偏高，系统性机会有限。择券偏向<strong>双低策略</strong>（低价格+低溢价率），优选正股基本面扎实、信用资质良好的标的。锂电链条相关转债可适度关注左侧布局机会。高价高溢价转债建议减仓避险。</p>
+
+      <h4>📌 杠杆管理</h4>
+      <p>DR007在1.44%低位运行，隔夜DR001约1.30%，资金面成本极低，<strong>债券端可维持适度杠杆（1.2-1.3倍）</strong>套息。但季末MPA考核在即（3月最后一周），建议<strong>提前锁定跨季资金</strong>，降低隔夜占比，增加7天和14天品种配置，防范季末流动性波动风险。</p>
+    </div>
+  </div>
+</div>
+
+</div> <!-- /container -->
+
+<div class="footer">
+  <p>数据来源：新浪财经、东方财富、英为财情(Investing.com)、财联社、中国货币网、CME Group、21经济网、中国外汇交易中心</p>
+  <p style="margin-top:4px;">报告生成时间：2026-03-27 07:00 | ⚠️ 本报告仅供内部研究参考，不构成任何投资建议。标注"⚠️ 数据待确认"处请以实时行情为准。</p>
+</div>
+
+<script>
+/* Theme toggle */
+function toggleTheme(){
+  var h=document.documentElement;
+  var n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',n);
+  try{localStorage.setItem('theme',n);}catch(e){}
+}
+(function(){try{var s=localStorage.getItem('theme');if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}})();
+
+/* Tab switching – supports multiple independent groups */
+function switchTab(groupId,tabId){
+  var group=document.getElementById(groupId);
+  if(!group)return;
+  group.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  group.querySelectorAll('.tab-panel').forEach(function(p){
+    p.style.opacity='0';
+    setTimeout(function(){p.classList.remove('active');p.style.display='none';},150);
+  });
+  var btn=group.querySelector('[data-tab="'+tabId+'"]');
+  if(btn)btn.classList.add('active');
+  var target=document.getElementById(tabId);
+  if(target){
+    setTimeout(function(){
+      target.style.display='block';
+      target.classList.add('active');
+      requestAnimationFrame(function(){target.style.opacity='1';});
+    },160);
+  }
+}
+
+/* Section collapse/expand */
+function toggleSection(header){
+  var body=header.nextElementSibling;
+  if(!body)return;
+  var collapsed=header.classList.toggle('collapsed');
+  if(collapsed){body.classList.add('hidden');}
+  else{body.classList.remove('hidden');}
+}
+</script>
+</body>
+</html>

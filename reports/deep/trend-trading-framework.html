@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《趋势交易法》核心逻辑与框架整合</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #f5f0e8;
+  --paper-deep: #ece5d8;
+  --accent: #c23616;
+  --accent2: #0a3d62;
+  --accent3: #6a3d0a;
+  --gold: #b8860b;
+  --gold-light: #daa520;
+  --text: #2d2a26;
+  --text-light: #5a554e;
+  --border: #c9bfad;
+  --shadow: rgba(26,22,18,0.08);
+  --green: #1e6f3e;
+  --red: #b33025;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 400;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.texture-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+/* === HEADER === */
+.hero {
+  background: linear-gradient(135deg, #1a1612 0%, #2c2520 40%, #3a2f28 100%);
+  color: var(--paper);
+  padding: 5rem 2rem 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 40px,
+    rgba(184,134,11,0.03) 40px, rgba(184,134,11,0.03) 41px
+  );
+}
+.hero-badge {
+  display: inline-block;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 0.4em 1.8em;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+.hero h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+.hero h1 span { color: var(--gold-light); }
+.hero .subtitle {
+  font-weight: 300;
+  font-size: 1rem;
+  opacity: 0.7;
+  letter-spacing: 0.15em;
+  margin-bottom: 2rem;
+}
+.hero-meta {
+  display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+  font-size: 0.8rem; opacity: 0.5; letter-spacing: 0.05em;
+}
+
+/* === LAYOUT === */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* === SECTION === */
+section {
+  padding: 3.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+section:last-child { border-bottom: none; }
+
+.section-num {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+/* === CARDS === */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin: 1.5rem 0;
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  position: relative;
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: 0 4px 20px var(--shadow); }
+.card-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.6rem;
+  color: var(--ink);
+}
+.card p {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--text-light);
+}
+
+/* === FLOW DIAGRAM === */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 2rem 0;
+}
+.flow-step {
+  display: flex;
+  align-items: stretch;
+  min-height: 70px;
+}
+.flow-line {
+  width: 50px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.flow-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--accent2);
+  background: var(--paper);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.flow-dot.active { background: var(--accent2); }
+.flow-bar {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+}
+.flow-content {
+  flex: 1;
+  padding: 0 0 1.8rem 0.8rem;
+}
+.flow-content h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 0.3rem;
+}
+.flow-content p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.7;
+}
+
+/* === TABLE === */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+}
+.data-table thead { background: var(--ink); color: var(--paper); }
+.data-table th {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  font-size: 0.78rem;
+}
+.data-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody tr:hover { background: rgba(184,134,11,0.04); }
+.badge-up { color: var(--green); font-weight: 700; }
+.badge-dn { color: var(--red); font-weight: 700; }
+
+/* === HIGHLIGHT BOX === */
+.highlight-box {
+  background: linear-gradient(135deg, #fff 0%, var(--paper-deep) 100%);
+  border-left: 4px solid var(--gold);
+  padding: 1.5rem 1.8rem;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.highlight-box strong { color: var(--accent); }
+
+.warning-box {
+  background: #fff5f5;
+  border-left: 4px solid var(--red);
+  padding: 1.2rem 1.5rem;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+  color: #5a2020;
+}
+
+/* === INTEGRATION SECTION === */
+.integration-block {
+  background: #fff;
+  border: 2px solid var(--accent2);
+  padding: 2rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+.integration-block::before {
+  content: '框架整合';
+  position: absolute;
+  top: -0.7em;
+  left: 1.5rem;
+  background: var(--accent2);
+  color: #fff;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  padding: 0.2em 1em;
+}
+.integration-block h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.05rem;
+  color: var(--accent2);
+  margin-bottom: 0.8rem;
+}
+
+/* === LAYER DIAGRAM === */
+.layer-stack {
+  margin: 2rem 0;
+}
+.layer-item {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 2px;
+}
+.layer-num {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #fff;
+}
+.layer-body {
+  flex: 1;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.layer-body h5 {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.layer-body p { font-size: 0.82rem; line-height: 1.6; }
+.layer-body .source { font-size: 0.72rem; opacity: 0.7; font-style: italic; }
+
+.l1 .layer-num { background: #1a1612; }
+.l1 .layer-body { background: #f0ece4; }
+.l2 .layer-num { background: #3a2f28; }
+.l2 .layer-body { background: #eee9df; }
+.l3 .layer-num { background: #0a3d62; }
+.l3 .layer-body { background: #e8eef4; }
+.l4 .layer-num { background: #c23616; }
+.l4 .layer-body { background: #faf0ed; }
+.l5 .layer-num { background: #6a3d0a; }
+.l5 .layer-body { background: #f4ede4; }
+
+/* === CONCEPT MAP === */
+.concept-map {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  margin: 1.5rem 0;
+}
+.concept-cell {
+  background: #fff;
+  padding: 1.2rem;
+  text-align: center;
+}
+.concept-cell .num {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--gold);
+}
+.concept-cell .label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--text-light);
+  margin-top: 0.3rem;
+}
+
+/* === PROSE === */
+.prose { margin: 1rem 0; }
+.prose p { margin-bottom: 1rem; font-size: 0.92rem; }
+.prose .em { color: var(--accent); font-weight: 500; }
+.key-term {
+  background: rgba(184,134,11,0.1);
+  padding: 0.1em 0.4em;
+  font-weight: 500;
+  border-bottom: 1px solid var(--gold);
+}
+
+/* === FOOTER === */
+.footer {
+  background: var(--ink);
+  color: rgba(245,240,232,0.4);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 640px) {
+  .concept-map { grid-template-columns: repeat(2, 1fr); }
+  .card-grid { grid-template-columns: 1fr; }
+  section { padding: 2.5rem 0; }
+}
+</style>
+</head>
+<body>
+<div class="texture-overlay"></div>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="hero-badge">深度阅读笔记 · 框架整合</div>
+  <h1>鹿希武《<span>趋势交易法</span>》</h1>
+  <p class="subtitle">核心逻辑提炼 × 五层嵌套框架优化</p>
+  <div class="hero-meta">
+    <span>第二版 · 496页</span>
+    <span>10章体系</span>
+    <span>17年实战经验</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 壹 · 全书架构 ===================== -->
+<section>
+  <div class="section-num">壹 · Overview</div>
+  <h2 class="section-title">全书架构与核心命题</h2>
+
+  <div class="prose">
+    <p>全书分<span class="em">上下两篇</span>。上篇聚焦交易心理（潜意识机制、复制成功模型的四步法），下篇为趋势交易法实战技法。核心命题只有一个：<strong>交易没有秘笈，交易就是正确处理盈利与亏损，属于概率和统计学范畴</strong>。</p>
+  </div>
+
+  <div class="concept-map">
+    <div class="concept-cell">
+      <div class="num">70%+</div>
+      <div class="label">各核心工具的<br>最低准确率</div>
+    </div>
+    <div class="concept-cell">
+      <div class="num">2:1</div>
+      <div class="label">理论设定<br>盈亏比</div>
+    </div>
+    <div class="concept-cell">
+      <div class="num">4</div>
+      <div class="label">基本反转<br>形态数量</div>
+    </div>
+    <div class="concept-cell">
+      <div class="num">3</div>
+      <div class="label">趋势结构类型<br>升 / 降 / 横向</div>
+    </div>
+    <div class="concept-cell">
+      <div class="num">25%</div>
+      <div class="label">盈亏比3:1下<br>盈亏平衡准确率</div>
+    </div>
+    <div class="concept-cell">
+      <div class="num">80%</div>
+      <div class="label">突破趋势线+拐点线<br>+分界点A后反转概率</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 贰 · 心理篇 ===================== -->
+<section>
+  <div class="section-num">贰 · Psychology</div>
+  <h2 class="section-title">上篇：交易心理 — 潜意识的敌与友</h2>
+
+  <div class="prose">
+    <p>鹿希武认为投资者失败的根本原因不是贪婪与恐惧本身（这些是人类天生属性），而是<span class="em">潜意识中积累的错误交易信息</span>在无意识阶段主导了交易行为。新手在培训测试中反而优于老手，原因正是"白纸"状态下直接植入正确模型，无需与旧习惯博弈。</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">核心机制</div>
+      <h4>四阶段学习模型</h4>
+      <p>无意识不做 → 有意识不做（学习） → 有意识做（实践验证） → 无意识做（潜意识接管交易）。摄入错误信息越多，第四阶段的交易绩效越差。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">关键发现</div>
+      <h4>执行力 > 知识量</h4>
+      <p>复员军人（交易新手）在7天培训后取得完美交易曲线。核心优势并非知识，而是军人式"无条件服从交易规则"的执行力。知识是潜藏的力量，行动才是成功的要素。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">方法论</div>
+      <h4>复制成功四步法</h4>
+      <p><strong>明理</strong>（理解正确理念）→ <strong>信守</strong>（建立信念）→ <strong>转变</strong>（用正确信息覆盖潜意识旧信息）→ <strong>执行</strong>（无条件100%执行交易计划）。</p>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>与现有框架的共振：</strong>你框架中"去伪存真"的理念与鹿希武"清除潜意识错误信息"高度一致。两者都强调：先确立少数可靠的规则（趋势线/拐点线 ↔ 生命线/主力线），然后无条件执行，而非不断增加新指标。
+  </div>
+</section>
+
+<!-- ===================== 叁 · 趋势概论 ===================== -->
+<section>
+  <div class="section-num">叁 · Trend Theory</div>
+  <h2 class="section-title">趋势概论：结构分解与概率统计</h2>
+
+  <div class="prose">
+    <p>趋势被定义为特定时间周期内价格的运行方向，由<span class="key-term">主浪</span>和<span class="key-term">调整浪</span>两个基本要素组成。所有走势图都是上升趋势、下降趋势和横向整理的排列组合——这是整个系统的公理基础。</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">结构定义</div>
+      <h4>上升趋势</h4>
+      <p>高点不断突破前高，低点不跌破前低。分为<strong>快升慢调</strong>（标准型态，各调整浪周期接近1:1）与<strong>慢升快调</strong>（通常仅3浪，第3浪后大概率反转）。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">结构定义</div>
+      <h4>下降趋势</h4>
+      <p>低点不断跌破前低，高点不突破前高。同样分为快跌慢调与慢跌快调。对称于上升趋势的镜像。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">关键发现</div>
+      <h4>主浪角度相似性</h4>
+      <p>同一趋势中各主浪角度近乎相同。最后一浪角度偏离（加速或减速）是<strong>趋势即将反转的先期信号</strong>。可将首浪角度线平移至调整浪终点预测未来轨迹。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">调整浪分类</div>
+      <h4>四种调整形态</h4>
+      <p>① 简单调整浪 ② ABC调整浪 ③ 三角形调整浪 ④ 12345调整浪。几乎涵盖所有调整形态，为数浪提供了有限集合。</p>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>概率统计核心发现：</strong>统计2005-2010年欧元小时图数据，主浪长度总和占趋势总长度的<strong>75%</strong>，调整浪仅占<strong>25%</strong>。顺势交易的数学优势显而易见。行至第5浪时反转概率显著升高，是关键的风控参考点。
+  </div>
+
+  <div class="integration-block">
+    <h4>→ 优化你的框架：角度相似性 = 历史平行线的理论基础</h4>
+    <p style="font-size:0.88rem; color:var(--text-light);">
+      鹿希武的"主浪角度相似性"与你框架中的"分形几何历史平行线"本质相同——都是发现<strong>通道角度在同一趋势中具有自相似性</strong>。差异在于：鹿的方法仅在同一时间周期内比较角度，而你的框架扩展到了跨周期的分形复制（毕达哥拉斯树类比）。建议在Layer 5（控节奏）中增加"角度偏离预警"子规则：当最新一浪的角度偏离前面主浪均值超过30%时，触发减仓/防守信号。
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 肆 · 核心工具 ===================== -->
+<section>
+  <div class="section-num">肆 · Core Tools</div>
+  <h2 class="section-title">五大核心工具及其概率验证</h2>
+
+  <div class="prose">
+    <p>趋势交易法的核心工具链按照<span class="em">确定方向 → 确定区域 → 确定入场点</span>的逻辑递进排列。每个工具都经过了至少一年的实盘数据回测验证。</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>① 趋势线 — 确定大方向（准确率 ~70%）</h4>
+        <p>严格定义上升趋势线连接最低点和最高点之前的调整浪低点，保证<strong>唯一性</strong>。绝不连接最高点之后的点。突破趋势线 = 反转概率≥70%。回测89笔交易，盈利累计稳定上行。</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>② 拐点线 — 过滤假信号（准确率 ~75%）</h4>
+        <p>通过通道外延线的平行线确定上/下拐点位置。与趋势线对比：准确率从70%提升至75%，交易次数从89次降低至69次——成功过滤了部分假突破信号。</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>③ 分界点A — 确认趋势反转（突破后反转概率 >80%）</h4>
+        <p>上升趋势中，分界点A = 前一调整浪的低点。跌破分界点A意味着趋势反转的概率大幅提升。分界点A也是止损的关键位置参考。三重验证：突破趋势线 + 突破拐点线 + 突破分界点A → 反转概率认定为"100%"（剩余小概率用止损处理）。</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>④ K线反转形态 — 精确入场（准确率 ~80%）</h4>
+        <p>仅使用启明星（底部）和黄昏星（顶部）两种形态。关键限制：<strong>必须在趋势线/拐点线确定的"正确区域"内使用</strong>，否则准确率低于50%。在正确区域使用后：准确率80%，平均盈亏比2:1。</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-bar" style="background:transparent;"></div></div>
+      <div class="flow-content">
+        <h4>⑤ 图表反转形态 — 趋势转折确认</h4>
+        <p>归纳为四种基本底部/顶部反转形态：失败3反转、大5小5反转、失败5反转、箱型反转。统计准确率约75%。底部形态周期通常长于顶部形态。</p>
+      </div>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>工具</th>
+        <th>准确率</th>
+        <th>交易次数(年)</th>
+        <th>核心作用</th>
+        <th>单独可盈利？</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>趋势线</td>
+        <td class="badge-up">~70%</td>
+        <td>89</td>
+        <td>确定大方向</td>
+        <td class="badge-up">是</td>
+      </tr>
+      <tr>
+        <td>拐点线</td>
+        <td class="badge-up">~75%</td>
+        <td>69</td>
+        <td>过滤假信号</td>
+        <td class="badge-up">是</td>
+      </tr>
+      <tr>
+        <td>分界点A</td>
+        <td class="badge-up">>80%</td>
+        <td>—</td>
+        <td>确认反转/止损位</td>
+        <td class="badge-up">是</td>
+      </tr>
+      <tr>
+        <td>K线反转（区域内）</td>
+        <td class="badge-up">~80%</td>
+        <td>56</td>
+        <td>精确入场</td>
+        <td>需配合区域</td>
+      </tr>
+      <tr>
+        <td>图表反转形态</td>
+        <td class="badge-up">~75%</td>
+        <td>—</td>
+        <td>趋势转折确认</td>
+        <td>需配合趋势</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="warning-box">
+    <strong>⚠ 鹿希武反复强调的教训：</strong>不分时间和位置盲目使用K线反转形态，准确率会跌至50%以下，让投资者迷失方向，频繁被"左右扇耳光"。工具有效性的前提是在正确的层级和区域内使用。
+  </div>
+</section>
+
+<!-- ===================== 伍 · 波浪理论 ===================== -->
+<section>
+  <div class="section-num">伍 · Wave Theory</div>
+  <h2 class="section-title">波浪理论新解：同级别数浪法</h2>
+
+  <div class="prose">
+    <p>鹿希武对传统波浪理论的最大改进是提出<span class="key-term">同级别数浪法则</span>，从根本上解决了"千人千浪"的困惑。核心思路：不是按照艾略特的1-2-3-4-5结构强行套用，而是利用趋势线和拐点线来客观确定浪的级别。</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">方法</div>
+      <h4>级别划分三层</h4>
+      <p><strong>祖浪</strong>：与趋势线相交的浪为最大级别。<strong>父浪</strong>：与拐点线相交的浪。<strong>子浪</strong>：父浪内部的细分结构。利用客观的线条交叉来定义级别，避免主观臆断。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">统计发现</div>
+      <h4>趋势结束概率分布</h4>
+      <p>行情处于第5浪时反转概率显著升高。3浪结构（失败5）也常见，慢升快调型上升趋势通常只有3浪。波浪形态概率分布为交易决策提供了量化依据。</p>
+    </div>
+  </div>
+
+  <div class="integration-block">
+    <h4>→ 优化你的框架：将"同级别数浪"纳入Layer 2-3之间</h4>
+    <p style="font-size:0.88rem; color:var(--text-light);">
+      你的框架Layer 2（看趋势）使用月线MA25，Layer 3（定纪律）使用日线MA100。两者之间可以嵌入"同级别数浪"作为趋势阶段定位工具：当日线MA100确认多头后，用鹿的方法判断当前处于第几浪。若已至第5浪且角度偏离 → 触发Layer 3的防守模式。这比单纯依赖均线滞后信号能提前1-2个交易日发出预警。
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 陆 · 趋势交易法 ===================== -->
+<section>
+  <div class="section-num">陆 · Trading System</div>
+  <h2 class="section-title">趋势交易法：完整交易系统设计</h2>
+
+  <div class="prose">
+    <p>趋势交易法的设计思想是：综合运用所有工具确定概率，然后将小概率事件视为"0"（用止损处理），只交易大概率方向。</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>Step 1 · 确定方向</h4>
+        <p>突破下降趋势线+拐点线+分界点A → 上升概率认定为"100%"<br>
+           跌破上升趋势线+拐点线+分界点A → 下降概率认定为"100%"<br>
+           突破趋势线+拐点线但未突破分界点A → 横向整理概率认定为"100%"</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>Step 2 · 确定区域（入场区域）</h4>
+        <p>上升趋势中：在拐点区域等待调整浪结束后买入<br>
+           下降趋势中：在拐点区域等待反弹结束后卖出<br>
+           同时关注四种反转形态出现以确认转折</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>Step 3 · 确定入场点</h4>
+        <p>在确定的区域内等待K线反转信号（启明星/黄昏星）出现后执行交易<br>
+           特别强调<strong>大趋势与小趋势矛盾时，小趋势是交易方向</strong>——用小止损博取大趋势波段</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot active"></div><div class="flow-bar"></div></div>
+      <div class="flow-content">
+        <h4>Step 4 · 止损与出场</h4>
+        <p>止损位：分界点A或前一调整浪极值。出场信号：趋势线/拐点线被反向突破 + 反转形态确认。核心纪律：<strong>上升趋势确立后不轻易获利了结多头</strong>，让利润奔跑。</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-bar" style="background:transparent;"></div></div>
+      <div class="flow-content">
+        <h4>Step 5 · 循环</h4>
+        <p>被止损后立即根据新信号重新定方向、定区域、找入场。不因止损而改变出牌规则。连续亏损是常态，系统有效性由统计决定而非单笔交易。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 柒 · 资金管理 ===================== -->
+<section>
+  <div class="section-num">柒 · Money Management</div>
+  <h2 class="section-title">资金管理：生存优先原则</h2>
+
+  <div class="prose">
+    <p>鹿希武将资金管理比作"用兵方法"——目的是确保在连续亏损后仍有能力继续交易。这与你框架中"控节奏"层的仓位管理理念完全一致。</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">第一层</div>
+      <h4>总风险金比率</h4>
+      <p>投入不超过总资产30%。设定总风险金 = 总资金 × 30%~50%。达到最大亏损后停止交易、检视方法。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">第二层</div>
+      <h4>单笔最大亏损</h4>
+      <p>将风险金分为10份：<br><strong>单笔最大亏损 = (总资金×风险比率) ÷ 10</strong><br>例：10万资金 → 单笔最大亏损3000元。新手可设20份以延长生存期。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">第三层</div>
+      <h4>周期决定仓位</h4>
+      <p>小周期止损小 → 可买入更多股数；大周期止损大 → 买入股数减少。<strong>同一资金管理规则下，周期越小，仓位越重</strong>。这是资金管理与交易周期的内在绑定。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">第四层</div>
+      <h4>盈亏比设定</h4>
+      <p>通过统计历史主浪均值÷调整浪均值得出理论最大盈亏比（欧元小时图约4.5:1）。实际设定2:1~3:1。盈亏平衡公式：<strong>X = 1/(P/L+1)</strong>，盈亏比3:1时仅需25%准确率即可平衡。</p>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>实战统计中的盈亏比分布：</strong>仅~20%的盈利交易能达到盈亏比2:1以上，~50%的盈利交易盈亏比约1:1，~30%的盈利交易盈亏比约1:4（小赚）。因此关键是：避免将1:1的盈利交易变为亏损，同时让2:1的交易尽量奔跑。这与"截断亏损、让利润奔跑"形成了精确的量化定义。
+  </div>
+</section>
+
+<!-- ===================== 捌 · 框架整合 ===================== -->
+<section>
+  <div class="section-num">捌 · Framework Integration</div>
+  <h2 class="section-title">五层嵌套框架优化整合</h2>
+
+  <div class="prose">
+    <p>将鹿希武《趋势交易法》的方法论与你现有的五层嵌套框架进行系统性整合。下面标注了每一层可以从本书中吸收的具体优化项。</p>
+  </div>
+
+  <div class="layer-stack">
+    <div class="layer-item l1">
+      <div class="layer-num">L1</div>
+      <div class="layer-body">
+        <h5>定牛熊 — 超长期周期定位</h5>
+        <p>原有：256月EXPMA(康波)、850周MA(朱格拉)、850日MA(基钦)</p>
+        <p><strong>+ 整合项：</strong>鹿的"慢升快调 = 仅3浪结构"可作为长期牛市末期的形态预警。当康波/朱格拉级别的上升趋势呈现慢升快调特征时，第3浪后应高度警惕牛转熊。</p>
+        <p class="source">来源：第一章趋势概论 — 慢升快调类型分析</p>
+      </div>
+    </div>
+    <div class="layer-item l2">
+      <div class="layer-num">L2</div>
+      <div class="layer-body">
+        <h5>看趋势 — 中期趋势确认</h5>
+        <p>原有：月线MA25，K线实体穿越确认</p>
+        <p><strong>+ 整合项①：</strong>引入"分界点A"作为趋势反转的硬性确认标准。月线级别，分界点A = 前一调整浪低点，跌破则认定熊市概率>80%，不再用均线滞后信号做唯一依据。</p>
+        <p><strong>+ 整合项②：</strong>嵌入"同级别数浪"定位当前处于第几浪。若月线已运行至第5浪 → 进入防守模式，与Layer 3的生命线纪律形成联动。</p>
+        <p class="source">来源：第五章分界点A + 第二章同级别数浪法则</p>
+      </div>
+    </div>
+    <div class="layer-item l3">
+      <div class="layer-num">L3</div>
+      <div class="layer-body">
+        <h5>定纪律 — 生命线与退出信号</h5>
+        <p>原有：日线MA100为生命线，天量为退出信号，2015 MA55崩溃为教训参考</p>
+        <p><strong>+ 整合项：</strong>鹿的"趋势线唯一性原则"可升级生命线的使用纪律：一旦跌破生命线，不得自行重画新的支撑线来安慰自己——这正是书中用日元案例反复警告的"错误趋势线绘制"导致的连续亏损场景。用分界点A（前低）作为生命线之外的二次确认。</p>
+        <p class="source">来源：第三章趋势线唯一性 + 日元案例分析</p>
+      </div>
+    </div>
+    <div class="layer-item l4">
+      <div class="layer-num">L4</div>
+      <div class="layer-body">
+        <h5>找买点 — 突破回踩确认</h5>
+        <p>原有：日线MA25主力线，突破→回踩→确认入场模式</p>
+        <p><strong>+ 整合项①：</strong>将鹿的"拐点线"概念用于定义"回踩区域"——通道外延线的平行线提供了精确的回踩预期位置，比单纯等MA25支撑更有空间感知。</p>
+        <p><strong>+ 整合项②：</strong>在回踩区域等待K线反转信号（启明星/黄昏星）作为入场确认，提高入场精度。鹿的实战数据显示此法平均盈亏比达2:1。</p>
+        <p><strong>+ 整合项③：</strong>"大趋势与小趋势矛盾时，小趋势是交易方向"——可用于处理回踩过程中的假信号：若小周期已形成反转形态但大周期仍看多，用小止损试仓。</p>
+        <p class="source">来源：第四章拐点线 + 第六章K线反转 + 第八章趋势交易法</p>
+      </div>
+    </div>
+    <div class="layer-item l5">
+      <div class="layer-num">L5</div>
+      <div class="layer-body">
+        <h5>控节奏 — 通道、量价、波动率</h5>
+        <p>原有：通道结构、量能动量、波动率控制仓位节奏</p>
+        <p><strong>+ 整合项①：</strong>鹿的"主浪角度偏离预警"直接适用——最后一浪角度显著偏离（加速或减速）= 趋势即将反转信号。纳入你的Python监控系统：计算近N个主浪角度的标准差，当最新角度>1.5σ时触发预警。</p>
+        <p><strong>+ 整合项②：</strong>资金管理公式化——将鹿的"单笔最大亏损 = 风险金÷交易次数"纳入仓位计算引擎。结合不同周期的止损空间自动计算最大仓位，避免人为超配。</p>
+        <p><strong>+ 整合项③：</strong>盈亏比动态计算——统计当前品种/周期的历史主浪均值与调整浪均值，得出理论最大盈亏比，设定为3:1或依品种特性调整。</p>
+        <p class="source">来源：第一章角度相似性 + 第九章资金管理</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 玖 · 关键差异 ===================== -->
+<section>
+  <div class="section-num">玖 · Key Differences</div>
+  <h2 class="section-title">两套体系的关键差异与互补</h2>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>鹿希武·趋势交易法</th>
+        <th>你的五层嵌套框架</th>
+        <th>互补方向</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>周期视角</strong></td>
+        <td>以小时图为主战场，日线/周线为辅</td>
+        <td>以月线→周线→日线递进，极长周期为锚</td>
+        <td>鹿的方法可填充你框架中"日内"及"短期择时"的空白</td>
+      </tr>
+      <tr>
+        <td><strong>趋势定义</strong></td>
+        <td>趋势线+拐点线+分界点A的几何定义</td>
+        <td>均线系统(MA25/55/100/850)的数学定义</td>
+        <td>几何方法（角度、通道）与均线方法互为验证</td>
+      </tr>
+      <tr>
+        <td><strong>量能</strong></td>
+        <td>未将成交量作为核心变量</td>
+        <td>天量为一级信号，量价背离为预警</td>
+        <td>你的量能体系是鹿框架的重要补充</td>
+      </tr>
+      <tr>
+        <td><strong>宏观周期</strong></td>
+        <td>无宏观经济周期映射</td>
+        <td>康波/朱格拉/基钦三重嵌套</td>
+        <td>宏观周期提供了鹿的"外汇小时图"无法覆盖的战略层</td>
+      </tr>
+      <tr>
+        <td><strong>入场方式</strong></td>
+        <td>拐点区域 + K线反转信号</td>
+        <td>MA25突破回踩确认</td>
+        <td>两种入场可以交叉验证：回踩MA25区域是否恰好在拐点线附近且出现K线反转</td>
+      </tr>
+      <tr>
+        <td><strong>止损逻辑</strong></td>
+        <td>分界点A / 前一调整浪极值</td>
+        <td>MA100(生命线)跌破 + 天量</td>
+        <td>分界点A可作为生命线之前的更紧密止损参考</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===================== 拾 · 行动清单 ===================== -->
+<section>
+  <div class="section-num">拾 · Action Items</div>
+  <h2 class="section-title">可落地的优化行动清单</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">Python监控系统</div>
+      <h4>新增：角度偏离预警模块</h4>
+      <p>在现有Dashboard中增加"主浪角度跟踪"面板。计算近3-5个主浪的角度（arctan(ΔPrice/ΔTime)），当最新角度偏离均值>1.5σ时标红预警。适用于所有已监控品种。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Python监控系统</div>
+      <h4>新增：分界点A自动标注</h4>
+      <p>在K线图上自动识别并标注"前一调整浪低/高点"作为分界点A。当价格接近或突破分界点A时推送告警。可与现有MA100生命线信号形成二重确认逻辑。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">Python监控系统</div>
+      <h4>新增：盈亏比计算引擎</h4>
+      <p>按品种/周期统计历史N周期内所有主浪与调整浪的均值，输出理论最大盈亏比。与"单笔最大亏损"联动，自动计算推荐仓位。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">分析框架</div>
+      <h4>升级：Layer 4入场三重验证</h4>
+      <p>将原有的"MA25突破回踩"升级为三重验证：① MA25回踩支撑 ② 拐点线区域确认 ③ K线反转形态（启明星/黄昏星）出现。三者共振时为最高置信度入场。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">写作内容</div>
+      <h4>付费文章选题</h4>
+      <p>可产出一篇"鹿希武趋势交易法 × 均线框架"的跨方法论对比分析，展示两套系统在A股/商品的共振信号案例。对内容社群读者有较高价值。</p>
+    </div>
+    <div class="card">
+      <div class="card-label">交易纪律</div>
+      <h4>防守：禁止重画趋势线</h4>
+      <p>将鹿的"趋势线唯一性"作为铁律写入交易纪律清单：一旦生命线（MA100）或趋势线被跌破，不得通过更换新的支撑线来自我安慰。止损即止损。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 总结 ===================== -->
+<section style="border-bottom:none; padding-bottom:2rem;">
+  <div class="section-num">结语 · Synthesis</div>
+  <h2 class="section-title">一句话总结</h2>
+
+  <div class="highlight-box" style="border-left-color: var(--accent2); font-size: 1rem; line-height: 2;">
+    鹿希武《趋势交易法》的核心贡献在于：<strong>将趋势交易从"理念"降维到了可回测、可验证的概率系统</strong>——用趋势线唯一性消除主观、用拐点线过滤噪声、用分界点A硬性确认反转、用K线反转精确入场、用资金管理公式约束仓位。这套逻辑与你的五层嵌套框架<strong>在哲学上完全一致（概率思维+层级递进+纪律执行），在方法上高度互补（几何工具 ↔ 均线工具、短周期 ↔ 长周期、趋势线 ↔ 量能信号）</strong>。整合后的体系将具备从康波级别牛熊判断到日内级别精确入场的完整覆盖能力。
+  </div>
+</section>
+
+</div>
+
+<footer class="footer">
+  鹿希武《趋势交易法》(第二版) 深度阅读笔记 · 五层嵌套框架整合方案<br>
+  基于全书496页内容提炼 · 仅供研究参考
+</footer>
+
+</body>
+</html>

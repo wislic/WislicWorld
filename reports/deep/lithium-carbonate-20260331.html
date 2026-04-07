@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碳酸锂期货技术分析与走势预判</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e17;--bg2:#111827;--card:#151d2e;--border:#1e2a42;--t1:#e2e8f0;--t2:#94a3b8;--t3:#64748b;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--cyan:#06b6d4;--purple:#8b5cf6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:'Noto Sans SC',sans-serif;line-height:1.6}
+.mono{font-family:'JetBrains Mono',monospace}
+.main{max-width:1280px;margin:0 auto;padding:20px}
+
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.hdr h1{font-size:18px;font-weight:900}
+.hdr-sub{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+.hdr-price{text-align:right}
+.hdr-price .big{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.hdr-price .chg{font-size:13px;font-family:'JetBrains Mono',monospace}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:800px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+.card:hover{border-color:rgba(59,130,246,0.3)}
+.card-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;margin-bottom:10px}
+.section-title{font-size:15px;font-weight:700;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Chart container */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+canvas{width:100%;height:320px;display:block}
+
+/* Indicator cards */
+.ind-card{text-align:center;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:8px}
+.ind-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.ind-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;margin-top:2px}
+.ind-signal{font-size:11px;margin-top:4px;font-weight:600}
+
+/* MA table */
+.ma-table{width:100%;font-size:13px;border-collapse:collapse}
+.ma-table td,.ma-table th{padding:8px 10px;border-bottom:1px solid rgba(30,42,66,0.5)}
+.ma-table th{font-size:10px;color:var(--t3);text-align:left;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
+.ma-table .num{font-family:'JetBrains Mono',monospace;text-align:right}
+
+/* Verdict */
+.verdict-box{padding:20px;border-radius:10px;margin-bottom:16px}
+.verdict-title{font-size:18px;font-weight:900;margin-bottom:6px}
+.verdict-sub{font-size:13px;color:var(--t2);line-height:1.7}
+
+/* Scenario bars */
+.scenario-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(30,42,66,0.3)}
+.scenario-label{width:80px;font-size:12px;font-weight:600;flex-shrink:0}
+.scenario-bar-track{flex:1;height:28px;background:rgba(255,255,255,0.03);border-radius:4px;position:relative;overflow:hidden}
+.scenario-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-family:'JetBrains Mono',monospace;color:white;font-weight:500}
+.scenario-pct{width:50px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;flex-shrink:0}
+
+/* Support/Resistance levels */
+.level-row{display:flex;align-items:center;padding:8px 12px;border-left:3px solid;margin-bottom:4px;border-radius:0 4px 4px 0;font-size:13px}
+.level-price{font-family:'JetBrains Mono',monospace;font-weight:700;width:90px;flex-shrink:0}
+.level-name{flex:1;color:var(--t2)}
+.level-dist{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);width:70px;text-align:right;flex-shrink:0}
+
+.hl-g{color:var(--green)}.hl-r{color:var(--red)}.hl-a{color:var(--amber)}.hl-b{color:var(--blue)}.hl-c{color:var(--cyan)}.hl-p{color:var(--purple)}
+.text-sm{font-size:12px}.text-xs{font-size:11px}.mt-8{margin-top:8px}.mb-8{margin-bottom:8px}.fw-700{font-weight:700}
+
+.footer{text-align:center;padding:20px;border-top:1px solid var(--border);color:var(--t3);font-size:10px;font-family:'JetBrains Mono',monospace;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="main">
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <h1>LC.GFE 碳酸锂期货 · 技术分析与走势预判</h1>
+    <div class="hdr-sub">GFEX LITHIUM CARBONATE FUTURES · DAILY · 2026.03.31</div>
+  </div>
+  <div class="hdr-price">
+    <div class="big">167,480</div>
+    <div class="chg hl-r">-2.41% · -4,140</div>
+  </div>
+</div>
+
+<!-- K-Line Chart -->
+<div class="chart-wrap">
+  <div class="card-label">K线图 · MA20 / MA60 · 近180个交易日</div>
+  <canvas id="kline"></canvas>
+</div>
+
+<!-- Indicators Row -->
+<div class="grid-4">
+  <div class="ind-card">
+    <div class="ind-val hl-a">59.1</div>
+    <div class="ind-label">RSI(14)</div>
+    <div class="ind-signal hl-a">中性偏强</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-val hl-g">+2,946</div>
+    <div class="ind-label">MACD</div>
+    <div class="ind-signal hl-g">金叉 · 多头</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-val hl-a">8,417</div>
+    <div class="ind-label">ATR(14)</div>
+    <div class="ind-signal hl-r">高波动</div>
+  </div>
+  <div class="ind-card">
+    <div class="ind-val hl-r">53.1%</div>
+    <div class="ind-label">20D年化波动率</div>
+    <div class="ind-signal hl-r">极端波动</div>
+  </div>
+</div>
+
+<!-- MA + Bollinger -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-label">均线系统</div>
+    <table class="ma-table">
+      <tr><th>均线</th><th style="text-align:right">价格</th><th style="text-align:right">偏离</th><th style="text-align:right">信号</th></tr>
+      <tr><td>MA5</td><td class="num">164,772</td><td class="num hl-g">+1.6%</td><td class="num hl-g">多</td></tr>
+      <tr><td>MA10</td><td class="num">156,242</td><td class="num hl-g">+7.2%</td><td class="num hl-g">多</td></tr>
+      <tr><td>MA20</td><td class="num">156,530</td><td class="num hl-g">+7.0%</td><td class="num hl-g">多</td></tr>
+      <tr><td>MA60</td><td class="num">153,147</td><td class="num hl-g">+9.4%</td><td class="num hl-g">多</td></tr>
+      <tr><td>MA120</td><td class="num">121,255</td><td class="num hl-g">+38.1%</td><td class="num hl-g">强多</td></tr>
+    </table>
+    <div class="text-xs mt-8" style="color:var(--t3)">
+      五线多头排列（MA5>MA10>MA20>MA60>MA120），中长期趋势明确向上。但短期偏离MA60达9.4%，存在回踩整固需求。
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">布林带 / 斐波那契</div>
+    <table class="ma-table">
+      <tr><th>水平</th><th style="text-align:right">价格</th><th style="text-align:right">偏离</th><th>含义</th></tr>
+      <tr><td>布林上轨</td><td class="num hl-r">171,535</td><td class="num hl-r">-2.4%</td><td class="text-xs" style="color:var(--t3)">逼近上轨</td></tr>
+      <tr><td>布林中轨</td><td class="num">156,530</td><td class="num hl-g">+7.0%</td><td class="text-xs" style="color:var(--t3)">20日均值</td></tr>
+      <tr><td>布林下轨</td><td class="num hl-g">141,525</td><td class="num hl-g">+18.3%</td><td class="text-xs" style="color:var(--t3)">超卖区</td></tr>
+      <tr style="border-top:1px solid var(--border)"><td>Fib 23.6%</td><td class="num hl-a">158,593</td><td class="num">+5.6%</td><td class="text-xs" style="color:var(--t3)">回撤支撑</td></tr>
+      <tr><td>Fib 38.2%</td><td class="num hl-a">139,534</td><td class="num">+20.0%</td><td class="text-xs" style="color:var(--t3)">强支撑</td></tr>
+    </table>
+    <div class="text-xs mt-8" style="color:var(--t3)">
+      斐波那契基于5.89万（25年低点）→18.94万（26年高点）回撤计算。当前在Fib 23.6%上方，回踩Fib 38.2%（14万）概率低。
+    </div>
+  </div>
+</div>
+
+<!-- Support / Resistance -->
+<div class="card">
+  <div class="card-label">关键支撑与阻力位 · 当前价格 167,480</div>
+  <div class="grid-2">
+    <div>
+      <div class="text-xs fw-700 hl-r mb-8">▲ 阻力位</div>
+      <div class="level-row" style="border-color:var(--red);background:rgba(239,68,68,0.04)">
+        <div class="level-price hl-r">189,400</div>
+        <div class="level-name">年内高点（2026.01.26盘中）</div>
+        <div class="level-dist">+13.1%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--red);background:rgba(239,68,68,0.03)">
+        <div class="level-price hl-r">181,520</div>
+        <div class="level-name">Q1收盘高点（2026.01.15）</div>
+        <div class="level-dist">+8.4%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--amber);background:rgba(245,158,11,0.03)">
+        <div class="level-price hl-a">173,000</div>
+        <div class="level-name">3月30日盘中高点</div>
+        <div class="level-dist">+3.3%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--amber);background:rgba(245,158,11,0.02)">
+        <div class="level-price hl-a">171,535</div>
+        <div class="level-name">布林上轨</div>
+        <div class="level-dist">+2.4%</div>
+      </div>
+    </div>
+    <div>
+      <div class="text-xs fw-700 hl-g mb-8">▼ 支撑位</div>
+      <div class="level-row" style="border-color:var(--green);background:rgba(16,185,129,0.03)">
+        <div class="level-price hl-g">164,772</div>
+        <div class="level-name">MA5 · 短期支撑</div>
+        <div class="level-dist">-1.6%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--green);background:rgba(16,185,129,0.03)">
+        <div class="level-price hl-g">158,593</div>
+        <div class="level-name">Fib 23.6% 回撤</div>
+        <div class="level-dist">-5.3%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--green);background:rgba(16,185,129,0.04)">
+        <div class="level-price hl-g">153,147</div>
+        <div class="level-name">MA60 · 中期趋势线</div>
+        <div class="level-dist">-8.5%</div>
+      </div>
+      <div class="level-row" style="border-color:var(--cyan);background:rgba(6,182,212,0.03)">
+        <div class="level-price hl-c">139,534</div>
+        <div class="level-name">Fib 38.2% · 强支撑</div>
+        <div class="level-dist">-16.7%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VERDICT -->
+<div class="verdict-box" style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(59,130,246,0.05));border:1px solid rgba(245,158,11,0.25)">
+  <div class="verdict-title">🎯 走势判断：先震荡整固，再择机突破</div>
+  <div class="verdict-sub">
+    <p><strong class="hl-a">核心判断：Q2大概率在14-18万区间宽幅震荡，Q3向上突破概率大于向下。</strong></p>
+    <p class="mt-8">理由如下——</p>
+    <p class="mt-8"><strong>多头格局未被破坏：</strong>五线多头排列完整，MACD金叉，收盘价站稳MA60上方。中长期上行趋势（5.89万→16.7万）明确。MA120（12.1万）持续上行提供趋势底部抬升。</p>
+    <p class="mt-8"><strong>短期需要消化获利盘：</strong>从5.89万到18.94万涨幅+222%后自然需要整固。年化波动率53-88%处于极端水平，3月走势呈现"急涨急跌"特征（单日±5%~7%频繁出现）。布林带上轨（17.2万）附近存在卖压，RSI 59中性区间表明动能尚未极端。</p>
+    <p class="mt-8"><strong>基本面支撑不允许深跌：</strong>库存处于历史低位（~11万吨），成本支撑12万+，储能需求强劲。Fib 38.2%（14万）为极限回调位，MA60（15.3万）为大概率支撑位。</p>
+    <p class="mt-8"><strong>向上突破催化剂：</strong>4月电池排产数据超预期 / 津巴布韦禁矿持续 / 宜春复产再推迟 / 储能Q2招标放量 / 地缘事件升级。突破18.9万需要明确的供给缺口信号。</p>
+  </div>
+</div>
+
+<!-- Scenarios -->
+<div class="card">
+  <div class="card-label">Q2-Q3 情景概率分布</div>
+  <div class="scenario-row">
+    <div class="scenario-label hl-g">突破向上</div>
+    <div class="scenario-bar-track"><div class="scenario-bar" style="width:30%;background:linear-gradient(90deg,var(--green),var(--cyan))">18-22万</div></div>
+    <div class="scenario-pct hl-g">30%</div>
+  </div>
+  <div class="text-xs" style="color:var(--t3);padding:4px 0 8px 92px">储能+退税抢出口超预期，供给持续收紧，突破1月高点18.9万，看至20万+</div>
+  
+  <div class="scenario-row">
+    <div class="scenario-label hl-a">区间震荡</div>
+    <div class="scenario-bar-track"><div class="scenario-bar" style="width:50%;background:linear-gradient(90deg,var(--amber),#d97706)">14-18万</div></div>
+    <div class="scenario-pct hl-a">50%</div>
+  </div>
+  <div class="text-xs" style="color:var(--t3);padding:4px 0 8px 92px">供需紧平衡兑现但缺乏新增催化，围绕15万中枢宽幅波动，Q3旺季后试探上沿</div>
+  
+  <div class="scenario-row">
+    <div class="scenario-label hl-r">回调下行</div>
+    <div class="scenario-bar-track"><div class="scenario-bar" style="width:20%;background:linear-gradient(90deg,var(--red),#dc2626)">12-14万</div></div>
+    <div class="scenario-pct hl-r">20%</div>
+  </div>
+  <div class="text-xs" style="color:var(--t3);padding:4px 0 8px 92px">H2供给集中释放+动力需求证伪+宜春复产落地，回踩12万成本支撑区</div>
+</div>
+
+<!-- Trading Strategy -->
+<div class="grid-2">
+  <div class="card" style="border-color:rgba(59,130,246,0.25)">
+    <div class="card-label" style="color:var(--blue)">📐 技术面操作建议</div>
+    <div class="text-sm" style="color:var(--t2);line-height:1.8">
+      <p><strong>趋势持有者：</strong>中长期多头格局明确，维持持仓。止损设在MA60（15.3万）下方，跌破则减仓观望。</p>
+      <p class="mt-8"><strong>波段交易：</strong>14-15万区间低吸，17-18万区间高抛。ATR 8400意味着日内波幅约5000元/吨，适合日内/短线。</p>
+      <p class="mt-8"><strong>突破交易：</strong>有效突破18.9万（放量+连续2日站稳）追多，目标20万；跌破14万止损。</p>
+    </div>
+  </div>
+  <div class="card" style="border-color:rgba(245,158,11,0.25)">
+    <div class="card-label" style="color:var(--amber)">⏰ 关键时间窗口</div>
+    <div class="text-sm" style="color:var(--t2);line-height:1.8">
+      <p><strong>4月1日：</strong>电池出口退税降至6%，抢出口效应衰减的验证点</p>
+      <p class="mt-8"><strong>4月中：</strong>4月电池排产计划落地，验证真实需求</p>
+      <p class="mt-8"><strong>5-6月：</strong>储能招标放量期 + 储能电池生产旺季启动</p>
+      <p class="mt-8"><strong>Q3：</strong>传统旺季，叠加H2新增产能集中释放，多空博弈加剧</p>
+      <p class="mt-8"><strong>全年锚定：</strong>宜春复产进度 · 津巴布韦出口政策</p>
+    </div>
+  </div>
+</div>
+
+<!-- Quarterly price distribution -->
+<div class="card">
+  <div class="card-label">历史季度价格走势 · 收盘价区间（元/吨）</div>
+  <div style="display:flex;align-items:flex-end;gap:6px;height:220px;padding:16px 4px 0">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">23Q3</div>
+      <div style="width:100%;background:linear-gradient(180deg,rgba(239,68,68,0.3),rgba(239,68,68,0.1));border-radius:3px;height:70%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono hl-r">230K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono hl-r">153K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">23Q4</div>
+      <div style="width:100%;background:rgba(239,68,68,0.15);border-radius:3px;height:45%;;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">153K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">109K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">24Q1</div>
+      <div style="width:100%;background:rgba(245,158,11,0.15);border-radius:3px;height:35%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">116K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">95K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">24Q2</div>
+      <div style="width:100%;background:rgba(245,158,11,0.12);border-radius:3px;height:28%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">116K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">89K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">24Q3</div>
+      <div style="width:100%;background:rgba(239,68,68,0.12);border-radius:3px;height:20%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">96K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">71K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">24Q4</div>
+      <div style="width:100%;background:rgba(100,116,139,0.15);border-radius:3px;height:16%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">87K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">69K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">25Q1</div>
+      <div style="width:100%;background:rgba(100,116,139,0.12);border-radius:3px;height:12%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono">81K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">73K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px;color:var(--red)">25Q2</div>
+      <div style="width:100%;background:rgba(239,68,68,0.15);border-radius:3px;height:10%;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid rgba(239,68,68,0.3)">
+        <div class="text-xs mono hl-r">74K→59K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">25Q3</div>
+      <div style="width:100%;background:rgba(16,185,129,0.12);border-radius:3px;height:22%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono hl-g">89K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">63K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px">25Q4</div>
+      <div style="width:100%;background:rgba(16,185,129,0.2);border-radius:3px;height:38%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div class="text-xs mono hl-g">131K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono">72K</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+      <div class="text-xs mono" style="color:var(--t3);margin-bottom:2px;color:var(--green)">26Q1</div>
+      <div style="width:100%;background:linear-gradient(180deg,rgba(16,185,129,0.3),rgba(6,182,212,0.15));border-radius:3px;height:55%;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid rgba(16,185,129,0.3)">
+        <div class="text-xs mono hl-g">182K</div>
+        <div class="text-xs mono" style="color:var(--t3)">↕</div>
+        <div class="text-xs mono hl-g">130K</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer class="footer">
+  <div>LC.GFE TECHNICAL ANALYSIS · AI COMMODITY RESEARCH</div>
+  <div>Data: Wind via GFEX · 660 trading days · Updated 2026.03.31</div>
+  <div style="margin-top:4px;color:rgba(100,116,139,0.5)">本报告仅供投研参考，不构成投资建议</div>
+</footer>
+
+<script>
+const DATA = [{"d": "2025-07-03", "o": 64000.0, "h": 64520.0, "l": 63000.0, "c": 64080.0, "v": 420967.0, "ma20": 61051, "ma60": 63827}, {"d": "2025-07-04", "o": 64100.0, "h": 64540.0, "l": 63160.0, "c": 63280.0, "v": 347729.0, "ma20": 61193, "ma60": 63698}, {"d": "2025-07-07", "o": 63200.0, "h": 63860.0, "l": 62800.0, "c": 63660.0, "v": 213300.0, "ma20": 61341, "ma60": 63587}, {"d": "2025-07-08", "o": 63860.0, "h": 65180.0, "l": 63400.0, "c": 63880.0, "v": 545405.0, "ma20": 61497, "ma60": 63487}, {"d": "2025-07-09", "o": 63860.0, "h": 65000.0, "l": 63740.0, "c": 64400.0, "v": 350125.0, "ma20": 61633, "ma60": 63385}, {"d": "2025-07-10", "o": 64560.0, "h": 64960.0, "l": 64100.0, "c": 64180.0, "v": 398022.0, "ma20": 61820, "ma60": 63283}, {"d": "2025-07-11", "o": 64160.0, "h": 64740.0, "l": 63340.0, "c": 64280.0, "v": 402816.0, "ma20": 62037, "ma60": 63175}, {"d": "2025-07-14", "o": 64300.0, "h": 68360.0, "l": 64300.0, "c": 66480.0, "v": 1014558.0, "ma20": 62372, "ma60": 63105}, {"d": "2025-07-15", "o": 66140.0, "h": 67360.0, "l": 64740.0, "c": 66660.0, "v": 764028.0, "ma20": 62712, "ma60": 63042}, {"d": "2025-07-16", "o": 67300.0, "h": 67460.0, "l": 65560.0, "c": 66420.0, "v": 478114.0, "ma20": 63039, "ma60": 62974}, {"d": "2025-07-17", "o": 66800.0, "h": 69980.0, "l": 65920.0, "c": 67960.0, "v": 826939.0, "ma20": 63434, "ma60": 62937}, {"d": "2025-07-18", "o": 68980.0, "h": 70980.0, "l": 68080.0, "c": 69960.0, "v": 1206323.0, "ma20": 63987, "ma60": 62953}, {"d": "2025-07-21", "o": 71160.0, "h": 71780.0, "l": 69820.0, "c": 71280.0, "v": 848150.0, "ma20": 64595, "ma60": 63010}, {"d": "2025-07-22", "o": 71900.0, "h": 74480.0, "l": 70920.0, "c": 72880.0, "v": 1118226.0, "ma20": 65204, "ma60": 63075}, {"d": "2025-07-23", "o": 73500.0, "h": 74680.0, "l": 68020.0, "c": 69380.0, "v": 1334159.0, "ma20": 65629, "ma60": 63093}, {"d": "2025-07-24", "o": 70180.0, "h": 77240.0, "l": 69600.0, "c": 76680.0, "v": 1770283.0, "ma20": 66388, "ma60": 63235}, {"d": "2025-07-25", "o": 77500.0, "h": 80520.0, "l": 76700.0, "c": 80520.0, "v": 1203424.0, "ma20": 67249, "ma60": 63461}, {"d": "2025-07-28", "o": 73200.0, "h": 78400.0, "l": 73120.0, "c": 73120.0, "v": 1005395.0, "ma20": 67792, "ma60": 63575}, {"d": "2025-07-29", "o": 70160.0, "h": 71760.0, "l": 68600.0, "c": 70840.0, "v": 744160.0, "ma20": 68195, "ma60": 63657}, {"d": "2025-07-30", "o": 72980.0, "h": 73980.0, "l": 68500.0, "c": 70600.0, "v": 792909.0, "ma20": 68527, "ma60": 63746}, {"d": "2025-07-31", "o": 68540.0, "h": 69000.0, "l": 66720.0, "c": 68280.0, "v": 521849.0, "ma20": 68737, "ma60": 63814}, {"d": "2025-08-01", "o": 69080.0, "h": 69940.0, "l": 67600.0, "c": 68920.0, "v": 340670.0, "ma20": 69019, "ma60": 63892}, {"d": "2025-08-04", "o": 69280.0, "h": 70660.0, "l": 68000.0, "c": 68920.0, "v": 247898.0, "ma20": 69282, "ma60": 63990}, {"d": "2025-08-05", "o": 68840.0, "h": 69940.0, "l": 67140.0, "c": 67840.0, "v": 437207.0, "ma20": 69480, "ma60": 64053}, {"d": "2025-08-06", "o": 68100.0, "h": 69820.0, "l": 67600.0, "c": 69620.0, "v": 425359.0, "ma20": 69741, "ma60": 64160}, {"d": "2025-08-07", "o": 69900.0, "h": 73500.0, "l": 69320.0, "c": 72300.0, "v": 766669.0, "ma20": 70147, "ma60": 64278}, {"d": "2025-08-08", "o": 73000.0, "h": 77040.0, "l": 72600.0, "c": 76960.0, "v": 895609.0, "ma20": 70781, "ma60": 64492}, {"d": "2025-08-11", "o": 81000.0, "h": 81000.0, "l": 81000.0, "c": 81000.0, "v": 38071.0, "ma20": 71507, "ma60": 64812}, {"d": "2025-08-12", "o": 88800.0, "h": 88840.0, "l": 82500.0, "c": 82520.0, "v": 1417704.0, "ma20": 72300, "ma60": 65168}, {"d": "2025-08-13", "o": 83000.0, "h": 87900.0, "l": 82500.0, "c": 85100.0, "v": 1245424.0, "ma20": 73234, "ma60": 65572}, {"d": "2025-08-14", "o": 85500.0, "h": 86640.0, "l": 82820.0, "c": 85300.0, "v": 1060127.0, "ma20": 74101, "ma60": 65975}, {"d": "2025-08-15", "o": 85560.0, "h": 87000.0, "l": 84000.0, "c": 86900.0, "v": 868811.0, "ma20": 74948, "ma60": 66388}, {"d": "2025-08-18", "o": 88160.0, "h": 90100.0, "l": 87720.0, "c": 89240.0, "v": 1036328.0, "ma20": 75846, "ma60": 66859}, {"d": "2025-08-19", "o": 89500.0, "h": 89540.0, "l": 87180.0, "c": 87540.0, "v": 734929.0, "ma20": 76579, "ma60": 67317}, {"d": "2025-08-20", "o": 85660.0, "h": 85880.0, "l": 80980.0, "c": 80980.0, "v": 838879.0, "ma20": 77159, "ma60": 67651}, {"d": "2025-08-21", "o": 82000.0, "h": 83800.0, "l": 81580.0, "c": 82760.0, "v": 777827.0, "ma20": 77463, "ma60": 68024}, {"d": "2025-08-22", "o": 82500.0, "h": 82980.0, "l": 78100.0, "c": 78960.0, "v": 932675.0, "ma20": 77385, "ma60": 68359}, {"d": "2025-08-25", "o": 81000.0, "h": 81560.0, "l": 78580.0, "c": 79380.0, "v": 626916.0, "ma20": 77698, "ma60": 68685}, {"d": "2025-08-26", "o": 79260.0, "h": 80100.0, "l": 77800.0, "c": 79020.0, "v": 559599.0, "ma20": 78107, "ma60": 69003}, {"d": "2025-08-27", "o": 79260.0, "h": 81020.0, "l": 78680.0, "c": 78860.0, "v": 729645.0, "ma20": 78520, "ma60": 69300}, {"d": "2025-08-28", "o": 77800.0, "h": 78360.0, "l": 75740.0, "c": 78140.0, "v": 805585.0, "ma20": 79013, "ma60": 69600}, {"d": "2025-08-29", "o": 77800.0, "h": 78480.0, "l": 76820.0, "c": 77180.0, "v": 490058.0, "ma20": 79426, "ma60": 69879}, {"d": "2025-09-01", "o": 77000.0, "h": 77420.0, "l": 74820.0, "c": 75560.0, "v": 540295.0, "ma20": 79758, "ma60": 70127}, {"d": "2025-09-02", "o": 75040.0, "h": 75800.0, "l": 72460.0, "c": 72620.0, "v": 620441.0, "ma20": 79997, "ma60": 70325}, {"d": "2025-09-03", "o": 72860.0, "h": 73300.0, "l": 71820.0, "c": 71880.0, "v": 442800.0, "ma20": 80110, "ma60": 70495}, {"d": "2025-09-04", "o": 71200.0, "h": 74440.0, "l": 71120.0, "c": 73420.0, "v": 712151.0, "ma20": 80166, "ma60": 70711}, {"d": "2025-09-05", "o": 73380.0, "h": 75860.0, "l": 72580.0, "c": 74260.0, "v": 802006.0, "ma20": 80031, "ma60": 70950}, {"d": "2025-09-08", "o": 73840.0, "h": 76580.0, "l": 73020.0, "c": 74800.0, "v": 782387.0, "ma20": 79721, "ma60": 71200}, {"d": "2025-09-09", "o": 74740.0, "h": 75160.0, "l": 72540.0, "c": 72900.0, "v": 591675.0, "ma20": 79240, "ma60": 71417}, {"d": "2025-09-10", "o": 69040.0, "h": 71000.0, "l": 68600.0, "c": 70720.0, "v": 751480.0, "ma20": 78521, "ma60": 71598}, {"d": "2025-09-11", "o": 70960.0, "h": 71420.0, "l": 70160.0, "c": 71000.0, "v": 426041.0, "ma20": 77806, "ma60": 71780}, {"d": "2025-09-12", "o": 70540.0, "h": 71560.0, "l": 70320.0, "c": 71160.0, "v": 410989.0, "ma20": 77019, "ma60": 71985}, {"d": "2025-09-15", "o": 71260.0, "h": 73160.0, "l": 70840.0, "c": 72680.0, "v": 482790.0, "ma20": 76191, "ma60": 72211}, {"d": "2025-09-16", "o": 73900.0, "h": 75100.0, "l": 72760.0, "c": 73180.0, "v": 500267.0, "ma20": 75473, "ma60": 72419}, {"d": "2025-09-17", "o": 73160.0, "h": 74060.0, "l": 72680.0, "c": 73640.0, "v": 343863.0, "ma20": 75106, "ma60": 72631}, {"d": "2025-09-18", "o": 73120.0, "h": 73800.0, "l": 71680.0, "c": 72880.0, "v": 502269.0, "ma20": 74612, "ma60": 72821}, {"d": "2025-09-19", "o": 72500.0, "h": 74020.0, "l": 72500.0, "c": 73960.0, "v": 370359.0, "ma20": 74362, "ma60": 72999}, {"d": "2025-09-22", "o": 74580.0, "h": 74860.0, "l": 73040.0, "c": 73420.0, "v": 396645.0, "ma20": 74064, "ma60": 73185}, {"d": "2025-09-23", "o": 73040.0, "h": 74460.0, "l": 72360.0, "c": 73660.0, "v": 497857.0, "ma20": 73796, "ma60": 73366}, {"d": "2025-09-24", "o": 73700.0, "h": 73880.0, "l": 72800.0, "c": 72880.0, "v": 345221.0, "ma20": 73497, "ma60": 73515}, {"d": "2025-09-25", "o": 72980.0, "h": 74480.0, "l": 72740.0, "c": 74040.0, "v": 342719.0, "ma20": 73292, "ma60": 73681}, {"d": "2025-09-26", "o": 73800.0, "h": 74500.0, "l": 72180.0, "c": 72880.0, "v": 481020.0, "ma20": 73077, "ma60": 73841}, {"d": "2025-09-29", "o": 73100.0, "h": 74720.0, "l": 72360.0, "c": 73920.0, "v": 465591.0, "ma20": 72995, "ma60": 74012}, {"d": "2025-09-30", "o": 73980.0, "h": 74020.0, "l": 72760.0, "c": 72800.0, "v": 317458.0, "ma20": 73004, "ma60": 74160}, {"d": "2025-10-09", "o": 73200.0, "h": 75240.0, "l": 72620.0, "c": 73340.0, "v": 361093.0, "ma20": 73077, "ma60": 74309}, {"d": "2025-10-10", "o": 73200.0, "h": 73880.0, "l": 72580.0, "c": 72740.0, "v": 294783.0, "ma20": 73043, "ma60": 74452}, {"d": "2025-10-13", "o": 72800.0, "h": 72960.0, "l": 71800.0, "c": 72280.0, "v": 282178.0, "ma20": 72944, "ma60": 74585}, {"d": "2025-10-14", "o": 72600.0, "h": 74420.0, "l": 72460.0, "c": 72680.0, "v": 270327.0, "ma20": 72838, "ma60": 74689}, {"d": "2025-10-15", "o": 73000.0, "h": 73800.0, "l": 72620.0, "c": 72720.0, "v": 205872.0, "ma20": 72829, "ma60": 74790}, {"d": "2025-10-16", "o": 72820.0, "h": 75000.0, "l": 72820.0, "c": 74940.0, "v": 268890.0, "ma20": 73040, "ma60": 74932}, {"d": "2025-10-17", "o": 74900.0, "h": 76840.0, "l": 74780.0, "c": 75700.0, "v": 366375.0, "ma20": 73275, "ma60": 75061}, {"d": "2025-10-20", "o": 76260.0, "h": 76580.0, "l": 75460.0, "c": 75700.0, "v": 169108.0, "ma20": 73502, "ma60": 75156}, {"d": "2025-10-21", "o": 75920.0, "h": 76380.0, "l": 75340.0, "c": 75980.0, "v": 197979.0, "ma20": 73667, "ma60": 75235}, {"d": "2025-10-22", "o": 76000.0, "h": 77500.0, "l": 75680.0, "c": 77120.0, "v": 376449.0, "ma20": 73864, "ma60": 75305}, {"d": "2025-10-23", "o": 77140.0, "h": 79960.0, "l": 77080.0, "c": 79940.0, "v": 490920.0, "ma20": 74179, "ma60": 75481}, {"d": "2025-10-24", "o": 79500.0, "h": 80880.0, "l": 78880.0, "c": 79520.0, "v": 613476.0, "ma20": 74511, "ma60": 75529}, {"d": "2025-10-27", "o": 80000.0, "h": 82060.0, "l": 79580.0, "c": 81900.0, "v": 514455.0, "ma20": 74908, "ma60": 75552}, {"d": "2025-10-28", "o": 81600.0, "h": 83480.0, "l": 81140.0, "c": 81640.0, "v": 729307.0, "ma20": 75319, "ma60": 75694}, {"d": "2025-10-29", "o": 82240.0, "h": 83280.0, "l": 81320.0, "c": 82900.0, "v": 659421.0, "ma20": 75781, "ma60": 75895}, {"d": "2025-10-30", "o": 83120.0, "h": 84940.0, "l": 82220.0, "c": 83400.0, "v": 829117.0, "ma20": 76307, "ma60": 76108}, {"d": "2025-10-31", "o": 83780.0, "h": 84460.0, "l": 80260.0, "c": 80780.0, "v": 915245.0, "ma20": 76644, "ma60": 76316}, {"d": "2025-11-03", "o": 81260.0, "h": 82880.0, "l": 81120.0, "c": 82280.0, "v": 586668.0, "ma20": 77114, "ma60": 76539}, {"d": "2025-11-04", "o": 82700.0, "h": 82900.0, "l": 77580.0, "c": 78560.0, "v": 975978.0, "ma20": 77346, "ma60": 76700}, {"d": "2025-11-05", "o": 78440.0, "h": 79840.0, "l": 78060.0, "c": 79140.0, "v": 515731.0, "ma20": 77663, "ma60": 76888}, {"d": "2025-11-06", "o": 79480.0, "h": 80920.0, "l": 78640.0, "c": 80500.0, "v": 582033.0, "ma20": 78021, "ma60": 77069}, {"d": "2025-11-07", "o": 79440.0, "h": 82460.0, "l": 79000.0, "c": 82300.0, "v": 810655.0, "ma20": 78499, "ma60": 77236}, {"d": "2025-11-10", "o": 82600.0, "h": 87280.0, "l": 82360.0, "c": 87240.0, "v": 986569.0, "ma20": 79247, "ma60": 77407}, {"d": "2025-11-11", "o": 87700.0, "h": 88100.0, "l": 85740.0, "c": 86540.0, "v": 902490.0, "ma20": 79940, "ma60": 77500}, {"d": "2025-11-12", "o": 86760.0, "h": 88200.0, "l": 85340.0, "c": 86580.0, "v": 1145329.0, "ma20": 80633, "ma60": 77567}, {"d": "2025-11-13", "o": 86500.0, "h": 89900.0, "l": 86280.0, "c": 87840.0, "v": 1106011.0, "ma20": 81278, "ma60": 77613}, {"d": "2025-11-14", "o": 87500.0, "h": 88260.0, "l": 86580.0, "c": 87360.0, "v": 757432.0, "ma20": 81861, "ma60": 77647}, {"d": "2025-11-17", "o": 87700.0, "h": 95200.0, "l": 87700.0, "c": 95200.0, "v": 1366919.0, "ma20": 82836, "ma60": 77786}, {"d": "2025-11-18", "o": 96200.0, "h": 96920.0, "l": 92800.0, "c": 93520.0, "v": 1487724.0, "ma20": 83713, "ma60": 77857}, {"d": "2025-11-19", "o": 93800.0, "h": 100080.0, "l": 93640.0, "c": 99300.0, "v": 1767428.0, "ma20": 84822, "ma60": 78053}, {"d": "2025-11-20", "o": 99780.0, "h": 102500.0, "l": 97720.0, "c": 98980.0, "v": 1595646.0, "ma20": 85774, "ma60": 78353}, {"d": "2025-11-21", "o": 94020.0, "h": 96000.0, "l": 91020.0, "c": 91020.0, "v": 1137824.0, "ma20": 86349, "ma60": 78491}, {"d": "2025-11-24", "o": 91820.0, "h": 92880.0, "l": 90000.0, "c": 90480.0, "v": 454612.0, "ma20": 86778, "ma60": 78683}, {"d": "2025-11-25", "o": 91000.0, "h": 95600.0, "l": 90660.0, "c": 95400.0, "v": 511279.0, "ma20": 87466, "ma60": 78950}, {"d": "2025-11-26", "o": 97740.0, "h": 99880.0, "l": 95340.0, "c": 96340.0, "v": 810231.0, "ma20": 88138, "ma60": 79238}, {"d": "2025-11-27", "o": 96600.0, "h": 98620.0, "l": 95500.0, "c": 95820.0, "v": 741463.0, "ma20": 88759, "ma60": 79521}, {"d": "2025-11-28", "o": 94860.0, "h": 97600.0, "l": 93880.0, "c": 96420.0, "v": 580962.0, "ma20": 89541, "ma60": 79826}, {"d": "2025-12-01", "o": 96980.0, "h": 98480.0, "l": 95840.0, "c": 96940.0, "v": 535475.0, "ma20": 90274, "ma60": 80155}, {"d": "2025-12-02", "o": 96840.0, "h": 97300.0, "l": 95100.0, "c": 96560.0, "v": 454290.0, "ma20": 91174, "ma60": 80505}, {"d": "2025-12-03", "o": 96560.0, "h": 97580.0, "l": 92520.0, "c": 93660.0, "v": 643323.0, "ma20": 91900, "ma60": 80856}, {"d": "2025-12-04", "o": 93800.0, "h": 94600.0, "l": 91600.0, "c": 93700.0, "v": 663458.0, "ma20": 92560, "ma60": 81219}, {"d": "2025-12-05", "o": 93420.0, "h": 93980.0, "l": 92100.0, "c": 92160.0, "v": 461507.0, "ma20": 93053, "ma60": 81532}, {"d": "2025-12-08", "o": 92460.0, "h": 95500.0, "l": 91120.0, "c": 94840.0, "v": 599367.0, "ma20": 93433, "ma60": 81875}, {"d": "2025-12-09", "o": 94580.0, "h": 94800.0, "l": 92300.0, "c": 92800.0, "v": 512215.0, "ma20": 93746, "ma60": 82175}, {"d": "2025-12-10", "o": 93000.0, "h": 96800.0, "l": 93000.0, "c": 95980.0, "v": 620935.0, "ma20": 94216, "ma60": 82559}, {"d": "2025-12-11", "o": 95900.0, "h": 99520.0, "l": 95460.0, "c": 98880.0, "v": 744190.0, "ma20": 94768, "ma60": 83029}, {"d": "2025-12-12", "o": 99520.0, "h": 101620.0, "l": 97620.0, "c": 97720.0, "v": 757689.0, "ma20": 95286, "ma60": 83474}, {"d": "2025-12-15", "o": 98080.0, "h": 101200.0, "l": 97300.0, "c": 101060.0, "v": 699601.0, "ma20": 95579, "ma60": 83972}, {"d": "2025-12-16", "o": 101500.0, "h": 102280.0, "l": 99800.0, "c": 100600.0, "v": 597317.0, "ma20": 95933, "ma60": 84438}, {"d": "2025-12-17", "o": 101500.0, "h": 109860.0, "l": 101500.0, "c": 108620.0, "v": 1158611.0, "ma20": 96399, "ma60": 85028}, {"d": "2025-12-18", "o": 106800.0, "h": 109920.0, "l": 104700.0, "c": 106160.0, "v": 1013916.0, "ma20": 96758, "ma60": 85570}, {"d": "2025-12-19", "o": 106100.0, "h": 113500.0, "l": 105620.0, "c": 111400.0, "v": 928963.0, "ma20": 97777, "ma60": 86212}, {"d": "2025-12-22", "o": 109000.0, "h": 116460.0, "l": 109000.0, "c": 114380.0, "v": 1007441.0, "ma20": 98972, "ma60": 86886}, {"d": "2025-12-23", "o": 113900.0, "h": 120440.0, "l": 113800.0, "c": 120360.0, "v": 731003.0, "ma20": 100220, "ma60": 87668}, {"d": "2025-12-24", "o": 122000.0, "h": 127880.0, "l": 118060.0, "c": 124720.0, "v": 949006.0, "ma20": 101639, "ma60": 88519}, {"d": "2025-12-25", "o": 118740.0, "h": 124500.0, "l": 116000.0, "c": 123520.0, "v": 924823.0, "ma20": 103024, "ma60": 89363}, {"d": "2025-12-26", "o": 124220.0, "h": 131000.0, "l": 124220.0, "c": 130520.0, "v": 428716.0, "ma20": 104729, "ma60": 90305}, {"d": "2025-12-29", "o": 129800.0, "h": 134500.0, "l": 117400.0, "c": 118820.0, "v": 688764.0, "ma20": 105823, "ma60": 91070}, {"d": "2025-12-30", "o": 117000.0, "h": 123980.0, "l": 115420.0, "c": 121580.0, "v": 459530.0, "ma20": 107074, "ma60": 91865}, {"d": "2025-12-31", "o": 123000.0, "h": 124380.0, "l": 117560.0, "c": 121580.0, "v": 392450.0, "ma20": 108470, "ma60": 92678}, {"d": "2026-01-05", "o": 125000.0, "h": 130260.0, "l": 122780.0, "c": 129980.0, "v": 343623.0, "ma20": 110284, "ma60": 93622}, {"d": "2026-01-06", "o": 132600.0, "h": 137940.0, "l": 132100.0, "c": 137940.0, "v": 304237.0, "ma20": 112573, "ma60": 94708}, {"d": "2026-01-07", "o": 144000.0, "h": 147000.0, "l": 137900.0, "c": 142300.0, "v": 420407.0, "ma20": 114946, "ma60": 95875}, {"d": "2026-01-08", "o": 140860.0, "h": 148500.0, "l": 136480.0, "c": 145000.0, "v": 654824.0, "ma20": 117556, "ma60": 97081}, {"d": "2026-01-09", "o": 142000.0, "h": 146920.0, "l": 139060.0, "c": 143420.0, "v": 469172.0, "ma20": 119928, "ma60": 98259}, {"d": "2026-01-12", "o": 156060.0, "h": 156060.0, "l": 152000.0, "c": 156060.0, "v": 68491.0, "ma20": 122787, "ma60": 99611}, {"d": "2026-01-13", "o": 168000.0, "h": 174060.0, "l": 161540.0, "c": 166980.0, "v": 608177.0, "ma20": 126250, "ma60": 101132}, {"d": "2026-01-14", "o": 169000.0, "h": 173440.0, "l": 155000.0, "c": 161940.0, "v": 589019.0, "ma20": 129294, "ma60": 102570}, {"d": "2026-01-15", "o": 163840.0, "h": 165000.0, "l": 155600.0, "c": 163220.0, "v": 431256.0, "ma20": 132425, "ma60": 104024}, {"d": "2026-01-16", "o": 163220.0, "h": 165820.0, "l": 146200.0, "c": 146200.0, "v": 591523.0, "ma20": 134304, "ma60": 105175}, {"d": "2026-01-19", "o": 147600.0, "h": 151100.0, "l": 142100.0, "c": 147260.0, "v": 329126.0, "ma20": 136359, "ma60": 106297}, {"d": "2026-01-20", "o": 149500.0, "h": 160500.0, "l": 149260.0, "c": 160500.0, "v": 451074.0, "ma20": 138814, "ma60": 107647}, {"d": "2026-01-21", "o": 160600.0, "h": 168880.0, "l": 158220.0, "c": 166740.0, "v": 376418.0, "ma20": 141432, "ma60": 109061}, {"d": "2026-01-22", "o": 165000.0, "h": 174120.0, "l": 162060.0, "c": 168780.0, "v": 464397.0, "ma20": 143853, "ma60": 110513}, {"d": "2026-01-23", "o": 174000.0, "h": 182000.0, "l": 172260.0, "c": 181520.0, "v": 342805.0, "ma20": 146693, "ma60": 112157}, {"d": "2026-01-26", "o": 189220.0, "h": 189440.0, "l": 163500.0, "c": 165680.0, "v": 575675.0, "ma20": 148801, "ma60": 113528}, {"d": "2026-01-27", "o": 166700.0, "h": 180620.0, "l": 164000.0, "c": 179600.0, "v": 382313.0, "ma20": 151255, "ma60": 115175}, {"d": "2026-01-28", "o": 182000.0, "h": 182860.0, "l": 164080.0, "c": 166280.0, "v": 473223.0, "ma20": 153628, "ma60": 116575}, {"d": "2026-01-29", "o": 169200.0, "h": 173880.0, "l": 158800.0, "c": 164820.0, "v": 521334.0, "ma20": 155790, "ma60": 118013}, {"d": "2026-01-30", "o": 161000.0, "h": 165480.0, "l": 148200.0, "c": 148200.0, "v": 552668.0, "ma20": 157121, "ma60": 119164}, {"d": "2026-02-02", "o": 146000.0, "h": 152820.0, "l": 132440.0, "c": 132440.0, "v": 644314.0, "ma20": 157244, "ma60": 120029}, {"d": "2026-02-03", "o": 140040.0, "h": 151880.0, "l": 137520.0, "c": 148100.0, "v": 619542.0, "ma20": 157752, "ma60": 121126}, {"d": "2026-02-04", "o": 150000.0, "h": 152580.0, "l": 145680.0, "c": 147220.0, "v": 311897.0, "ma20": 157998, "ma60": 122126}, {"d": "2026-02-05", "o": 145800.0, "h": 147260.0, "l": 132320.0, "c": 132780.0, "v": 531724.0, "ma20": 157387, "ma60": 122896}, {"d": "2026-02-06", "o": 129000.0, "h": 138500.0, "l": 124100.0, "c": 132920.0, "v": 586706.0, "ma20": 156862, "ma60": 123669}, {"d": "2026-02-09", "o": 139500.0, "h": 141000.0, "l": 135000.0, "c": 137000.0, "v": 305321.0, "ma20": 155909, "ma60": 124488}, {"d": "2026-02-10", "o": 136500.0, "h": 141000.0, "l": 133100.0, "c": 137340.0, "v": 295231.0, "ma20": 154427, "ma60": 125321}, {"d": "2026-02-11", "o": 138000.0, "h": 150500.0, "l": 138000.0, "c": 150260.0, "v": 351877.0, "ma20": 153843, "ma60": 126239}, {"d": "2026-02-12", "o": 150000.0, "h": 152440.0, "l": 146520.0, "c": 149420.0, "v": 304798.0, "ma20": 153153, "ma60": 127170}, {"d": "2026-02-13", "o": 143000.0, "h": 153120.0, "l": 142380.0, "c": 152640.0, "v": 300191.0, "ma20": 153475, "ma60": 128059}, {"d": "2026-02-24", "o": 160000.0, "h": 165800.0, "l": 157100.0, "c": 164120.0, "v": 214364.0, "ma20": 154318, "ma60": 129145}, {"d": "2026-02-25", "o": 164500.0, "h": 171440.0, "l": 164000.0, "c": 166480.0, "v": 322727.0, "ma20": 154617, "ma60": 130403}, {"d": "2026-02-26", "o": 187000.0, "h": 187700.0, "l": 171020.0, "c": 173660.0, "v": 402461.0, "ma20": 154963, "ma60": 131789}, {"d": "2026-02-27", "o": 173000.0, "h": 177060.0, "l": 168200.0, "c": 176040.0, "v": 281980.0, "ma20": 155326, "ma60": 133133}, {"d": "2026-03-02", "o": 178680.0, "h": 179500.0, "l": 169500.0, "c": 172020.0, "v": 227061.0, "ma20": 154851, "ma60": 134394}, {"d": "2026-03-03", "o": 170000.0, "h": 170560.0, "l": 150860.0, "c": 150860.0, "v": 445115.0, "ma20": 154110, "ma60": 135312}, {"d": "2026-03-04", "o": 150000.0, "h": 155660.0, "l": 146060.0, "c": 153060.0, "v": 297139.0, "ma20": 152783, "ma60": 136256}, {"d": "2026-03-05", "o": 156700.0, "h": 161000.0, "l": 149000.0, "c": 155860.0, "v": 300505.0, "ma20": 152262, "ma60": 137238}, {"d": "2026-03-06", "o": 155000.0, "h": 160860.0, "l": 151100.0, "c": 156160.0, "v": 228223.0, "ma20": 151829, "ma60": 138231}, {"d": "2026-03-09", "o": 150000.0, "h": 165000.0, "l": 142000.0, "c": 161060.0, "v": 402478.0, "ma20": 152472, "ma60": 139354}, {"d": "2026-03-10", "o": 161500.0, "h": 166800.0, "l": 159220.0, "c": 163000.0, "v": 226273.0, "ma20": 154000, "ma60": 140509}, {"d": "2026-03-11", "o": 164500.0, "h": 167280.0, "l": 155000.0, "c": 155040.0, "v": 267346.0, "ma20": 154347, "ma60": 141557}, {"d": "2026-03-12", "o": 155300.0, "h": 159600.0, "l": 152800.0, "c": 156980.0, "v": 219828.0, "ma20": 154835, "ma60": 142593}, {"d": "2026-03-13", "o": 156500.0, "h": 162840.0, "l": 150080.0, "c": 152080.0, "v": 288572.0, "ma20": 155800, "ma60": 143581}, {"d": "2026-03-16", "o": 152460.0, "h": 159780.0, "l": 149100.0, "c": 159620.0, "v": 231813.0, "ma20": 157135, "ma60": 144642}, {"d": "2026-03-17", "o": 159620.0, "h": 160480.0, "l": 154220.0, "c": 155320.0, "v": 173439.0, "ma20": 158051, "ma60": 145582}, {"d": "2026-03-18", "o": 155000.0, "h": 156840.0, "l": 149700.0, "c": 150120.0, "v": 205889.0, "ma20": 158690, "ma60": 146456}, {"d": "2026-03-19", "o": 148000.0, "h": 150260.0, "l": 140080.0, "c": 142600.0, "v": 288571.0, "ma20": 158307, "ma60": 147148}, {"d": "2026-03-20", "o": 145080.0, "h": 151400.0, "l": 143600.0, "c": 143860.0, "v": 258276.0, "ma20": 158029, "ma60": 147869}, {"d": "2026-03-23", "o": 141500.0, "h": 149500.0, "l": 140040.0, "c": 149040.0, "v": 228178.0, "ma20": 157849, "ma60": 148543}, {"d": "2026-03-24", "o": 151980.0, "h": 154700.0, "l": 150120.0, "c": 152940.0, "v": 231071.0, "ma20": 157290, "ma60": 149322}, {"d": "2026-03-25", "o": 156880.0, "h": 161500.0, "l": 154560.0, "c": 159120.0, "v": 233304.0, "ma20": 156922, "ma60": 150118}, {"d": "2026-03-26", "o": 159120.0, "h": 162300.0, "l": 155240.0, "c": 157200.0, "v": 260930.0, "ma20": 156099, "ma60": 150831}, {"d": "2026-03-27", "o": 155800.0, "h": 169840.0, "l": 155800.0, "c": 168440.0, "v": 324620.0, "ma20": 155719, "ma60": 151633}, {"d": "2026-03-30", "o": 169440.0, "h": 173000.0, "l": 167960.0, "c": 171620.0, "v": 199887.0, "ma20": 155699, "ma60": 152414}, {"d": "2026-03-31", "o": 169000.0, "h": 171980.0, "l": 166580.0, "c": 167480.0, "v": 66043.0, "ma20": 156530, "ma60": 153147}];
+
+// Draw K-line chart
+const canvas = document.getElementById('kline');
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = (rect.width - 32) * dpr;
+  canvas.height = 320 * dpr;
+  canvas.style.width = (rect.width - 32) + 'px';
+  canvas.style.height = '320px';
+  ctx.scale(dpr, dpr);
+}
+resize();
+
+const W = canvas.width / dpr;
+const H = canvas.height / dpr;
+const PAD = {t:20, r:60, b:30, l:10};
+const cW = W - PAD.l - PAD.r;
+const cH = H - PAD.t - PAD.b;
+
+const prices = DATA.map(d => [d.l, d.h]).flat();
+const minP = Math.min(...prices) * 0.98;
+const maxP = Math.max(...prices) * 1.01;
+
+function x(i) { return PAD.l + (i / (DATA.length - 1)) * cW; }
+function y(p) { return PAD.t + (1 - (p - minP) / (maxP - minP)) * cH; }
+
+// Grid
+ctx.strokeStyle = 'rgba(30,42,66,0.5)';
+ctx.lineWidth = 0.5;
+for (let i = 0; i < 5; i++) {
+  const py = PAD.t + (i / 4) * cH;
+  const price = maxP - (i / 4) * (maxP - minP);
+  ctx.beginPath(); ctx.moveTo(PAD.l, py); ctx.lineTo(W - PAD.r, py); ctx.stroke();
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(Math.round(price / 1000) + 'K', W - PAD.r + 4, py + 3);
+}
+
+// MA lines
+function drawMA(key, color) {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  let started = false;
+  DATA.forEach((d, i) => {
+    if (d[key] !== null) {
+      if (!started) { ctx.moveTo(x(i), y(d[key])); started = true; }
+      else ctx.lineTo(x(i), y(d[key]));
+    }
+  });
+  ctx.stroke();
+}
+drawMA('ma20', '#f59e0b');
+drawMA('ma60', '#8b5cf6');
+
+// Candlesticks
+const barW = Math.max(1, (cW / DATA.length) * 0.6);
+DATA.forEach((d, i) => {
+  const bull = d.c >= d.o;
+  const color = bull ? '#10b981' : '#ef4444';
+  const px = x(i);
+  
+  // Wick
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, y(d.h));
+  ctx.lineTo(px, y(d.l));
+  ctx.stroke();
+  
+  // Body
+  const top = y(Math.max(d.o, d.c));
+  const bot = y(Math.min(d.o, d.c));
+  const bodyH = Math.max(1, bot - top);
+  ctx.fillStyle = color;
+  ctx.fillRect(px - barW/2, top, barW, bodyH);
+});
+
+// Legend
+ctx.font = '10px JetBrains Mono';
+ctx.fillStyle = '#f59e0b';
+ctx.fillText('— MA20', PAD.l + 4, PAD.t - 6);
+ctx.fillStyle = '#8b5cf6';
+ctx.fillText('— MA60', PAD.l + 70, PAD.t - 6);
+ctx.fillStyle = '#64748b';
+ctx.fillText('LC.GFE 2025.07—2026.03', W - PAD.r - 160, PAD.t - 6);
+
+// Date labels
+ctx.fillStyle = '#64748b';
+ctx.font = '9px JetBrains Mono';
+ctx.textAlign = 'center';
+[0, Math.floor(DATA.length*0.25), Math.floor(DATA.length*0.5), Math.floor(DATA.length*0.75), DATA.length-1].forEach(i => {
+  ctx.fillText(DATA[i].d.slice(5), x(i), H - 8);
+});
+</script>
+</body>
+</html>

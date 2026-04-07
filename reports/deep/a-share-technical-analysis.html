@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五层嵌套技术分析 · A股核心指数</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0e14;--bg2:#12151e;--bg3:#1a1e2b;--bg4:#222738;
+  --tx:#d4d8e8;--tx2:#8890a8;--tx3:#5a6180;
+  --up:#22c55e;--up2:#16a34a;--upbg:rgba(34,197,94,.08);
+  --dn:#ef4444;--dn2:#dc2626;--dnbg:rgba(239,68,68,.08);
+  --gold:#f59e0b;--blue:#3b82f6;--purple:#8b5cf6;--cyan:#06b6d4;
+  --border:#2a2f42;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans SC',sans-serif;-webkit-font-smoothing:antialiased}
+.header{background:linear-gradient(135deg,var(--bg2),var(--bg3));border-bottom:1px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.header h1{font-size:1.2rem;font-weight:700;letter-spacing:.08em}
+.header h1 span{color:var(--gold)}
+.header .meta{font-size:.75rem;color:var(--tx2);letter-spacing:.05em}
+.tabs{display:flex;gap:4px;padding:.8rem 2rem;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;color:var(--tx2);background:transparent;border:1px solid transparent;transition:all .2s;white-space:nowrap}
+.tab:hover{background:var(--bg3);color:var(--tx)}
+.tab.active{background:var(--bg3);color:var(--gold);border-color:var(--gold)}
+.panel{display:none;padding:1.5rem 2rem}
+.panel.active{display:block}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.5rem}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem}
+.metric .label{font-size:.68rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.3rem}
+.metric .value{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:500}
+.metric .sub{font-size:.72rem;margin-top:.2rem;font-family:'JetBrains Mono',monospace}
+.up{color:var(--up)}.dn{color:var(--dn)}.gold{color:var(--gold)}.blue{color:var(--blue)}.purple{color:var(--purple)}
+.layer-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.5rem}
+@media(max-width:900px){.layer-grid{grid-template-columns:repeat(2,1fr)}}
+.layer-card{border-radius:8px;padding:1rem;position:relative;overflow:hidden}
+.layer-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.lc1{background:#1a1a1a;border:1px solid #333}.lc1::before{background:#888}
+.lc2{background:#0f1a2a;border:1px solid #1a3050}.lc2::before{background:var(--blue)}
+.lc3{background:#0a1a1a;border:1px solid #0a3a3a}.lc3::before{background:var(--cyan)}
+.lc4{background:#1a0f0f;border:1px solid #3a1a1a}.lc4::before{background:var(--dn)}
+.lc5{background:#1a1a0f;border:1px solid #3a3a1a}.lc5::before{background:var(--gold)}
+.layer-card .ltitle{font-size:.65rem;color:var(--tx3);letter-spacing:.15em;margin-bottom:.4rem}
+.layer-card .lsignal{font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.layer-card .ldetail{font-size:.72rem;color:var(--tx2);line-height:1.5}
+.chart-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1.5rem}
+.chart-box .chart-title{font-size:.78rem;color:var(--tx2);margin-bottom:.8rem;letter-spacing:.05em}
+.chart-container{position:relative;height:340px}
+.vol-container{position:relative;height:120px;margin-top:8px}
+.analysis-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1.5rem}
+.analysis-box h3{font-size:.88rem;color:var(--gold);margin-bottom:.8rem;font-weight:600}
+.analysis-box p{font-size:.85rem;line-height:1.8;color:var(--tx2)}
+.analysis-box p strong{color:var(--tx)}
+.badge{display:inline-block;padding:.15em .6em;border-radius:4px;font-size:.7rem;font-weight:500}
+.badge-up{background:var(--upbg);color:var(--up)}
+.badge-dn{background:var(--dnbg);color:var(--dn)}
+.badge-warn{background:rgba(245,158,11,.1);color:var(--gold)}
+.summary-table{width:100%;border-collapse:collapse;margin-bottom:1.5rem;font-size:.82rem}
+.summary-table th{background:var(--bg3);color:var(--tx2);padding:.6rem .8rem;text-align:left;font-weight:500;letter-spacing:.05em;font-size:.72rem;border-bottom:2px solid var(--border)}
+.summary-table td{padding:.6rem .8rem;border-bottom:1px solid var(--border)}
+.summary-table tr:hover{background:var(--bg3)}
+.summary-table .mono{font-family:'JetBrains Mono',monospace;font-size:.78rem}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>五层嵌套<span>技术分析</span></h1>
+  <div class="meta">数据截至 2026-03-31 · 整合趋势交易法框架</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">总览对比</div>
+  <div class="tab" onclick="switchTab('000688_SH')">科创50</div>
+  <div class="tab" onclick="switchTab('000300_SH')">沪深300</div>
+  <div class="tab" onclick="switchTab('000852_SH')">中证1000</div>
+  <div class="tab" onclick="switchTab('000905_SH')">中证500</div>
+  <div class="tab" onclick="switchTab('881001_WI')">万得全A</div>
+</div>
+
+<div class="panel active" id="panel-overview">
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>指数</th><th>收盘</th><th>5日</th><th>20日</th><th>60日</th><th>YTD</th>
+        <th>L1牛熊</th><th>L2趋势</th><th>L3生命线</th><th>L4主力线</th><th>均线</th>
+        <th>量比</th><th>分界点A</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>科创50</strong></td>
+        <td class="mono">1256.33</td>
+        <td class="mono dn">-2.7%</td>
+        <td class="mono dn">-9.5%</td>
+        <td class="mono dn">-6.9%</td>
+        <td class="mono dn">-10.5%</td>
+        <td><span class="badge badge-up">牛</span></td>
+        <td class="up" style="font-size:.78rem">上升趋势</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-9.95%)</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-8.28%)</td>
+        <td class="gold" style="font-size:.78rem">缠绕</td>
+        <td class="mono">0.88</td>
+        <td class="mono">1285.83</td>
+      </tr>
+      <tr>
+        <td><strong>沪深300</strong></td>
+        <td class="mono">4450.05</td>
+        <td class="mono dn">-0.6%</td>
+        <td class="mono dn">-4.4%</td>
+        <td class="mono dn">-4.2%</td>
+        <td class="mono dn">-5.7%</td>
+        <td><span class="badge badge-up">牛</span></td>
+        <td class="up" style="font-size:.78rem">上升趋势</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-4.02%)</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-3.5%)</td>
+        <td class="gold" style="font-size:.78rem">缠绕</td>
+        <td class="mono">0.87</td>
+        <td class="mono">4448.05</td>
+      </tr>
+      <tr>
+        <td><strong>中证1000</strong></td>
+        <td class="mono">7619.85</td>
+        <td class="mono up">+0.2%</td>
+        <td class="mono dn">-6.4%</td>
+        <td class="mono up">+0.5%</td>
+        <td class="mono dn">-1.7%</td>
+        <td><span class="badge badge-up">牛</span></td>
+        <td class="up" style="font-size:.78rem">上升趋势</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-2.52%)</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-5.52%)</td>
+        <td class="gold" style="font-size:.78rem">缠绕</td>
+        <td class="mono">0.85</td>
+        <td class="mono">7067.7</td>
+      </tr>
+      <tr>
+        <td><strong>中证500</strong></td>
+        <td class="mono">7617.33</td>
+        <td class="mono up">+0.3%</td>
+        <td class="mono dn">-8.0%</td>
+        <td class="mono up">+2.8%</td>
+        <td class="mono dn">-0.4%</td>
+        <td><span class="badge badge-up">牛</span></td>
+        <td class="up" style="font-size:.78rem">上升趋势</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-1.65%)</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-6.09%)</td>
+        <td class="gold" style="font-size:.78rem">缠绕</td>
+        <td class="mono">0.88</td>
+        <td class="mono">6817.41</td>
+      </tr>
+      <tr>
+        <td><strong>万得全A</strong></td>
+        <td class="mono">6336.38</td>
+        <td class="mono dn">-0.0%</td>
+        <td class="mono dn">-5.6%</td>
+        <td class="mono dn">-1.1%</td>
+        <td class="mono dn">-3.1%</td>
+        <td><span class="badge badge-up">牛</span></td>
+        <td class="up" style="font-size:.78rem">上升趋势</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-2.9%)</td>
+        <td class="dn" style="font-size:.78rem">跌破 (-4.68%)</td>
+        <td class="gold" style="font-size:.78rem">缠绕</td>
+        <td class="mono">0.89</td>
+        <td class="mono">6030.56</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div class="analysis-box">
+    <h3>🔍 总览研判</h3>
+    <p>
+      五大指数共性特征鲜明：<strong>L1层（定牛熊）全部处于850日均线上方，基钦周期维度确认牛市格局未变</strong>。
+      L2层（看趋势）全部维持上升趋势（价格在MA250上方且MA250上行）。但L3-L4层出现显著分歧：
+      <strong>全部指数均跌破MA100生命线和MA25主力线，均线呈缠绕状态</strong>，短期调整压力明确。
+    </p>
+    <p>
+      从趋势交易法视角，当前处于"突破趋势线+拐点线但未突破分界点A"的状态——即<strong>横向整理概率较大</strong>。
+      量比全部低于1（缩量），60日趋势角度接近0°，确认方向不明确。操作策略应为<strong>高抛低吸、控制仓位</strong>，等待方向性突破。
+    </p>
+    <p>
+      结构性分化：<strong>中证500</strong>距MA250偏离最大(+10.99%)，中期强度最强；<strong>科创50</strong>跌破MA100幅度最深(-9.95%)，短期最弱；
+      <strong>沪深300</strong>距分界点A最近（仅+0.04%），若跌破则确认中期转弱。
+    </p>
+  </div>
+</div>
+
+<div class="panel" id="panel-000688_SH">
+  <div class="grid4">
+    <div class="metric">
+      <div class="label">收盘价</div>
+      <div class="value">1256.33</div>
+      <div class="sub dn">-2.67% (5日)</div>
+    </div>
+    <div class="metric">
+      <div class="label">距52周高点</div>
+      <div class="value dn">-19.3%</div>
+      <div class="sub">距低点 <span class="up">+35.9%</span></div>
+    </div>
+    <div class="metric">
+      <div class="label">ATR波动率</div>
+      <div class="value">2.97%</div>
+      <div class="sub">量比 0.88 </div>
+    </div>
+    <div class="metric">
+      <div class="label">综合研判</div>
+      <div class="value gold">多空交织·观望</div>
+      <div class="sub">多头得分 4/8</div>
+    </div>
+  </div>
+
+  <div class="layer-grid">
+    <div class="layer-card lc1">
+      <div class="ltitle">L1 · 定牛熊</div>
+      <div class="lsignal up">牛</div>
+      <div class="ldetail">MA850: 1002.93<br>偏离: 25.27%</div>
+    </div>
+    <div class="layer-card lc2">
+      <div class="ltitle">L2 · 看趋势</div>
+      <div class="lsignal up">上升趋势</div>
+      <div class="ldetail">MA250: 1230.55<br>偏离: 2.09%</div>
+    </div>
+    <div class="layer-card lc3">
+      <div class="ltitle">L3 · 定纪律</div>
+      <div class="lsignal dn">✗ 跌破生命线</div>
+      <div class="ldetail">MA100: 1395.2<br>偏离: -9.95%</div>
+    </div>
+    <div class="layer-card lc4">
+      <div class="ltitle">L4 · 找买点</div>
+      <div class="lsignal dn">✗ 跌破主力线</div>
+      <div class="ldetail">MA25: 1369.74 (下行)<br>偏离: -8.28%</div>
+    </div>
+    <div class="layer-card lc5">
+      <div class="ltitle">L5 · 控节奏</div>
+      <div class="lsignal gold">均线缠绕</div>
+      <div class="ldetail">60日角度: -0.11°<br>分界点A: 1285.83</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">科创50 · 日线走势 + 均线系统 (近250日)</div>
+    <div class="chart-container"><canvas id="chart-000688_SH"></canvas></div>
+    <div class="vol-container"><canvas id="vol-000688_SH"></canvas></div>
+  </div>
+
+  <div class="analysis-box">
+    <h3>📊 科创50 五层信号详解</h3>
+    <p>
+      <strong>L1 定牛熊：</strong>牛。价格在MA850(1002.93)上方，
+      基钦周期维度确认牛市格局。偏离25.27%。
+    </p>
+    <p>
+      <strong>L2 看趋势：</strong>上升趋势。MA250=1230.55，偏离2.09%。
+      近期表现：YTD -10.5%，60日-6.9%。
+    </p>
+    <p><strong>L3 定纪律：</strong>价格跌破MA100生命线(1395.2)，偏离-9.95%，中期偏空。需关注能否收复。</p>
+    <p><strong>L4 找买点：</strong>跌破MA25主力线(1369.74，下行)，偏离-8.28%，短期承压。</p>
+    <p><strong>L5 控节奏：</strong>均线缠绕，方向不明。
+       60日线性回归角度-0.11°，趋势角度偏负，调整态势。
+       量比0.88（缩量运行，等待放量确认方向）。
+    </p>
+    <p><strong>趋势交易法·分界点A：</strong>分界点A位于1285.83(2025-11-21)，当前价距分界点A -2.29%。 <strong class='dn'>⚠ 接近分界点A，若跌破将确认中期反转</strong></p>
+    <p><strong>操作建议：</strong>长期牛市格局不变，但中短期跌破关键均线。建议降低仓位至半仓以下，等待MA25拐头或K线反转信号。</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-000300_SH">
+  <div class="grid4">
+    <div class="metric">
+      <div class="label">收盘价</div>
+      <div class="value">4450.05</div>
+      <div class="sub dn">-0.55% (5日)</div>
+    </div>
+    <div class="metric">
+      <div class="label">距52周高点</div>
+      <div class="value dn">-7.1%</div>
+      <div class="sub">距低点 <span class="up">+24.0%</span></div>
+    </div>
+    <div class="metric">
+      <div class="label">ATR波动率</div>
+      <div class="value">1.69%</div>
+      <div class="sub">量比 0.87 </div>
+    </div>
+    <div class="metric">
+      <div class="label">综合研判</div>
+      <div class="value gold">多空交织·观望</div>
+      <div class="sub">多头得分 4/8</div>
+    </div>
+  </div>
+
+  <div class="layer-grid">
+    <div class="layer-card lc1">
+      <div class="ltitle">L1 · 定牛熊</div>
+      <div class="lsignal up">牛</div>
+      <div class="ldetail">MA850: 3906.62<br>偏离: 13.91%</div>
+    </div>
+    <div class="layer-card lc2">
+      <div class="ltitle">L2 · 看趋势</div>
+      <div class="lsignal up">上升趋势</div>
+      <div class="ldetail">MA250: 4324.08<br>偏离: 2.91%</div>
+    </div>
+    <div class="layer-card lc3">
+      <div class="ltitle">L3 · 定纪律</div>
+      <div class="lsignal dn">✗ 跌破生命线</div>
+      <div class="ldetail">MA100: 4636.47<br>偏离: -4.02%</div>
+    </div>
+    <div class="layer-card lc4">
+      <div class="ltitle">L4 · 找买点</div>
+      <div class="lsignal dn">✗ 跌破主力线</div>
+      <div class="ldetail">MA25: 4611.6 (下行)<br>偏离: -3.5%</div>
+    </div>
+    <div class="layer-card lc5">
+      <div class="ltitle">L5 · 控节奏</div>
+      <div class="lsignal gold">均线缠绕</div>
+      <div class="ldetail">60日角度: -0.04°<br>分界点A: 4448.05</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">沪深300 · 日线走势 + 均线系统 (近250日)</div>
+    <div class="chart-container"><canvas id="chart-000300_SH"></canvas></div>
+    <div class="vol-container"><canvas id="vol-000300_SH"></canvas></div>
+  </div>
+
+  <div class="analysis-box">
+    <h3>📊 沪深300 五层信号详解</h3>
+    <p>
+      <strong>L1 定牛熊：</strong>牛。价格在MA850(3906.62)上方，
+      基钦周期维度确认牛市格局。偏离13.91%。
+    </p>
+    <p>
+      <strong>L2 看趋势：</strong>上升趋势。MA250=4324.08，偏离2.91%。
+      近期表现：YTD -5.7%，60日-4.2%。
+    </p>
+    <p><strong>L3 定纪律：</strong>价格跌破MA100生命线(4636.47)，偏离-4.02%，中期偏空。需关注能否收复。</p>
+    <p><strong>L4 找买点：</strong>跌破MA25主力线(4611.6，下行)，偏离-3.5%，短期承压。</p>
+    <p><strong>L5 控节奏：</strong>均线缠绕，方向不明。
+       60日线性回归角度-0.04°，趋势平坦，处于盘整状态。
+       量比0.87（缩量运行，等待放量确认方向）。
+    </p>
+    <p><strong>趋势交易法·分界点A：</strong>分界点A位于4448.05(2025-11-24)，当前价距分界点A +0.04%。 <strong class='dn'>⚠ 接近分界点A，若跌破将确认中期反转</strong></p>
+    <p><strong>操作建议：</strong>长期牛市格局不变，但中短期跌破关键均线。建议降低仓位至半仓以下，等待MA25拐头或K线反转信号。</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-000852_SH">
+  <div class="grid4">
+    <div class="metric">
+      <div class="label">收盘价</div>
+      <div class="value">7619.85</div>
+      <div class="sub up">+0.25% (5日)</div>
+    </div>
+    <div class="metric">
+      <div class="label">距52周高点</div>
+      <div class="value dn">-11.0%</div>
+      <div class="sub">距低点 <span class="up">+38.6%</span></div>
+    </div>
+    <div class="metric">
+      <div class="label">ATR波动率</div>
+      <div class="value">2.61%</div>
+      <div class="sub">量比 0.85 </div>
+    </div>
+    <div class="metric">
+      <div class="label">综合研判</div>
+      <div class="value gold">多空交织·观望</div>
+      <div class="sub">多头得分 4/8</div>
+    </div>
+  </div>
+
+  <div class="layer-grid">
+    <div class="layer-card lc1">
+      <div class="ltitle">L1 · 定牛熊</div>
+      <div class="lsignal up">牛</div>
+      <div class="ldetail">MA850: 6309.3<br>偏离: 20.77%</div>
+    </div>
+    <div class="layer-card lc2">
+      <div class="ltitle">L2 · 看趋势</div>
+      <div class="lsignal up">上升趋势</div>
+      <div class="ldetail">MA250: 7104.14<br>偏离: 7.26%</div>
+    </div>
+    <div class="layer-card lc3">
+      <div class="ltitle">L3 · 定纪律</div>
+      <div class="lsignal dn">✗ 跌破生命线</div>
+      <div class="ldetail">MA100: 7816.47<br>偏离: -2.52%</div>
+    </div>
+    <div class="layer-card lc4">
+      <div class="ltitle">L4 · 找买点</div>
+      <div class="lsignal dn">✗ 跌破主力线</div>
+      <div class="ldetail">MA25: 8065.38 (下行)<br>偏离: -5.52%</div>
+    </div>
+    <div class="layer-card lc5">
+      <div class="ltitle">L5 · 控节奏</div>
+      <div class="lsignal gold">均线缠绕</div>
+      <div class="ldetail">60日角度: -0.01°<br>分界点A: 7067.7</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">中证1000 · 日线走势 + 均线系统 (近250日)</div>
+    <div class="chart-container"><canvas id="chart-000852_SH"></canvas></div>
+    <div class="vol-container"><canvas id="vol-000852_SH"></canvas></div>
+  </div>
+
+  <div class="analysis-box">
+    <h3>📊 中证1000 五层信号详解</h3>
+    <p>
+      <strong>L1 定牛熊：</strong>牛。价格在MA850(6309.3)上方，
+      基钦周期维度确认牛市格局。偏离20.77%。
+    </p>
+    <p>
+      <strong>L2 看趋势：</strong>上升趋势。MA250=7104.14，偏离7.26%。
+      近期表现：YTD -1.7%，60日+0.5%。
+    </p>
+    <p><strong>L3 定纪律：</strong>价格跌破MA100生命线(7816.47)，偏离-2.52%，中期偏空。需关注能否收复。</p>
+    <p><strong>L4 找买点：</strong>跌破MA25主力线(8065.38，下行)，偏离-5.52%，短期承压。</p>
+    <p><strong>L5 控节奏：</strong>均线缠绕，方向不明。
+       60日线性回归角度-0.01°，趋势平坦，处于盘整状态。
+       量比0.85（缩量运行，等待放量确认方向）。
+    </p>
+    <p><strong>趋势交易法·分界点A：</strong>分界点A位于7067.7(2025-11-21)，当前价距分界点A +7.81%。</p>
+    <p><strong>操作建议：</strong>长期牛市格局不变，但中短期跌破关键均线。建议降低仓位至半仓以下，等待MA25拐头或K线反转信号。</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-000905_SH">
+  <div class="grid4">
+    <div class="metric">
+      <div class="label">收盘价</div>
+      <div class="value">7617.33</div>
+      <div class="sub up">+0.26% (5日)</div>
+    </div>
+    <div class="metric">
+      <div class="label">距52周高点</div>
+      <div class="value dn">-12.0%</div>
+      <div class="sub">距低点 <span class="up">+44.1%</span></div>
+    </div>
+    <div class="metric">
+      <div class="label">ATR波动率</div>
+      <div class="value">2.6%</div>
+      <div class="sub">量比 0.88 </div>
+    </div>
+    <div class="metric">
+      <div class="label">综合研判</div>
+      <div class="value gold">多空交织·观望</div>
+      <div class="sub">多头得分 4/8</div>
+    </div>
+  </div>
+
+  <div class="layer-grid">
+    <div class="layer-card lc1">
+      <div class="ltitle">L1 · 定牛熊</div>
+      <div class="lsignal up">牛</div>
+      <div class="ldetail">MA850: 6017.6<br>偏离: 26.58%</div>
+    </div>
+    <div class="layer-card lc2">
+      <div class="ltitle">L2 · 看趋势</div>
+      <div class="lsignal up">上升趋势</div>
+      <div class="ldetail">MA250: 6862.8<br>偏离: 10.99%</div>
+    </div>
+    <div class="layer-card lc3">
+      <div class="ltitle">L3 · 定纪律</div>
+      <div class="lsignal dn">✗ 跌破生命线</div>
+      <div class="ldetail">MA100: 7744.99<br>偏离: -1.65%</div>
+    </div>
+    <div class="layer-card lc4">
+      <div class="ltitle">L4 · 找买点</div>
+      <div class="lsignal dn">✗ 跌破主力线</div>
+      <div class="ldetail">MA25: 8111.41 (下行)<br>偏离: -6.09%</div>
+    </div>
+    <div class="layer-card lc5">
+      <div class="ltitle">L5 · 控节奏</div>
+      <div class="lsignal gold">均线缠绕</div>
+      <div class="ldetail">60日角度: 0.0°<br>分界点A: 6817.41</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">中证500 · 日线走势 + 均线系统 (近250日)</div>
+    <div class="chart-container"><canvas id="chart-000905_SH"></canvas></div>
+    <div class="vol-container"><canvas id="vol-000905_SH"></canvas></div>
+  </div>
+
+  <div class="analysis-box">
+    <h3>📊 中证500 五层信号详解</h3>
+    <p>
+      <strong>L1 定牛熊：</strong>牛。价格在MA850(6017.6)上方，
+      基钦周期维度确认牛市格局。偏离26.58%。
+    </p>
+    <p>
+      <strong>L2 看趋势：</strong>上升趋势。MA250=6862.8，偏离10.99%。
+      近期表现：YTD -0.4%，60日+2.8%。
+    </p>
+    <p><strong>L3 定纪律：</strong>价格跌破MA100生命线(7744.99)，偏离-1.65%，中期偏空。需关注能否收复。</p>
+    <p><strong>L4 找买点：</strong>跌破MA25主力线(8111.41，下行)，偏离-6.09%，短期承压。</p>
+    <p><strong>L5 控节奏：</strong>均线缠绕，方向不明。
+       60日线性回归角度0.0°，趋势平坦，处于盘整状态。
+       量比0.88（缩量运行，等待放量确认方向）。
+    </p>
+    <p><strong>趋势交易法·分界点A：</strong>分界点A位于6817.41(2025-11-21)，当前价距分界点A +11.73%。</p>
+    <p><strong>操作建议：</strong>长期牛市格局不变，但中短期跌破关键均线。建议降低仓位至半仓以下，等待MA25拐头或K线反转信号。</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-881001_WI">
+  <div class="grid4">
+    <div class="metric">
+      <div class="label">收盘价</div>
+      <div class="value">6336.38</div>
+      <div class="sub dn">-0.04% (5日)</div>
+    </div>
+    <div class="metric">
+      <div class="label">距52周高点</div>
+      <div class="value dn">-8.7%</div>
+      <div class="sub">距低点 <span class="up">+36.9%</span></div>
+    </div>
+    <div class="metric">
+      <div class="label">ATR波动率</div>
+      <div class="value">2.16%</div>
+      <div class="sub">量比 0.89 </div>
+    </div>
+    <div class="metric">
+      <div class="label">综合研判</div>
+      <div class="value gold">多空交织·观望</div>
+      <div class="sub">多头得分 4/8</div>
+    </div>
+  </div>
+
+  <div class="layer-grid">
+    <div class="layer-card lc1">
+      <div class="ltitle">L1 · 定牛熊</div>
+      <div class="lsignal up">牛</div>
+      <div class="ldetail">MA850: 5091.08<br>偏离: 24.46%</div>
+    </div>
+    <div class="layer-card lc2">
+      <div class="ltitle">L2 · 看趋势</div>
+      <div class="lsignal up">上升趋势</div>
+      <div class="ldetail">MA250: 5937.52<br>偏离: 6.72%</div>
+    </div>
+    <div class="layer-card lc3">
+      <div class="ltitle">L3 · 定纪律</div>
+      <div class="lsignal dn">✗ 跌破生命线</div>
+      <div class="ldetail">MA100: 6525.95<br>偏离: -2.9%</div>
+    </div>
+    <div class="layer-card lc4">
+      <div class="ltitle">L4 · 找买点</div>
+      <div class="lsignal dn">✗ 跌破主力线</div>
+      <div class="ldetail">MA25: 6647.58 (下行)<br>偏离: -4.68%</div>
+    </div>
+    <div class="layer-card lc5">
+      <div class="ltitle">L5 · 控节奏</div>
+      <div class="lsignal gold">均线缠绕</div>
+      <div class="ldetail">60日角度: -0.02°<br>分界点A: 6030.56</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">万得全A · 日线走势 + 均线系统 (近250日)</div>
+    <div class="chart-container"><canvas id="chart-881001_WI"></canvas></div>
+    <div class="vol-container"><canvas id="vol-881001_WI"></canvas></div>
+  </div>
+
+  <div class="analysis-box">
+    <h3>📊 万得全A 五层信号详解</h3>
+    <p>
+      <strong>L1 定牛熊：</strong>牛。价格在MA850(5091.08)上方，
+      基钦周期维度确认牛市格局。偏离24.46%。
+    </p>
+    <p>
+      <strong>L2 看趋势：</strong>上升趋势。MA250=5937.52，偏离6.72%。
+      近期表现：YTD -3.1%，60日-1.1%。
+    </p>
+    <p><strong>L3 定纪律：</strong>价格跌破MA100生命线(6525.95)，偏离-2.9%，中期偏空。需关注能否收复。</p>
+    <p><strong>L4 找买点：</strong>跌破MA25主力线(6647.58，下行)，偏离-4.68%，短期承压。</p>
+    <p><strong>L5 控节奏：</strong>均线缠绕，方向不明。
+       60日线性回归角度-0.02°，趋势平坦，处于盘整状态。
+       量比0.89（缩量运行，等待放量确认方向）。
+    </p>
+    <p><strong>趋势交易法·分界点A：</strong>分界点A位于6030.56(2025-11-21)，当前价距分界点A +5.07%。</p>
+    <p><strong>操作建议：</strong>长期牛市格局不变，但中短期跌破关键均线。建议降低仓位至半仓以下，等待MA25拐头或K线反转信号。</p>
+  </div>
+</div>
+<script>
+const DATA = {"000688_SH": {"name": "科创50", "curr_date": "2026-03-31", "curr_price": 1256.33, "pct_5d": -2.67, "pct_20d": -9.51, "pct_60d": -6.87, "pct_ytd": -10.48, "from_52w_high": -19.26, "from_52w_low": 35.94, "ma25": 1369.74, "ma55": 1433.65, "ma100": 1395.2, "ma250": 1230.55, "ma850": 1002.93, "dist_ma25": -8.28, "dist_ma100": -9.95, "dist_ma250": 2.09, "dist_ma850": 25.27, "l1_signal": "牛", "l2_signal": "上升趋势", "l3_above_lifeline": false, "l4_above_mainforce": false, "l4_ma25_slope": "下行", "ma_aligned_bull": false, "ma_aligned_bear": false, "atr_pct": 2.97, "vol_ratio": 0.88, "vol_extreme": false, "div_point_a": 1285.83, "div_point_a_date": "2025-11-21", "angle_60d": -0.11, "chart_dates": ["2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-18", "2025-04-21", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31"], "chart_close": [1064.79, 1042.89, 1045.94, 1031.7, 1029.05, 1040.57, 1029.48, 1022.71, 1024.38, 1022.75, 1018.07, 924.17, 940.09, 980.57, 991.22, 1011.71, 1014.28, 1006.34, 1014.51, 1016.81, 1008.6, 1019.41, 1016.22, 1012.65, 1003.32, 1004.57, 1002.83, 1003.87, 1012.42, 1026.52, 1030.19, 1026.44, 1006.32, 1011.23, 1009.68, 1013.77, 1000.97, 995.24, 995.25, 997.68, 995.49, 990.71, 980.58, 982.26, 972.92, 970.64, 986.3, 977.03, 981.71, 986.11, 996.41, 991.64, 997.61, 982.9, 980.93, 977.97, 972.94, 970.89, 963.08, 968.18, 962.94, 957.87, 961.49, 978.71, 995.61, 989.97, 988.21, 1003.41, 994.8, 982.64, 984.95, 984.8, 978.29, 991.95, 983.11, 979.99, 994.45, 992.39, 996.25, 997.63, 1005.65, 1007.53, 1007.89, 1016.27, 1020.86, 1032.84, 1054.2, 1055.11, 1070.45, 1058.57, 1047.87, 1036.77, 1049.41, 1053.65, 1059.76, 1058.21, 1043.54, 1049.73, 1069.81, 1077.7, 1085.74, 1101.29, 1124.82, 1112.27, 1148.15, 1149.15, 1247.86, 1287.73, 1270.87, 1272.56, 1364.6, 1341.31, 1357.15, 1328.28, 1306.48, 1226.98, 1268.55, 1275.87, 1245.53, 1259.1, 1326.03, 1338.02, 1340.4, 1358.05, 1370.43, 1380.35, 1362.65, 1408.64, 1407.3, 1456.47, 1474.49, 1450.82, 1470.41, 1495.29, 1539.08, 1452.68, 1473.02, 1410.3, 1430.0, 1416.58, 1363.17, 1367.9, 1406.32, 1405.41, 1401.26, 1462.22, 1484.21, 1471.73, 1489.12, 1461.3, 1415.53, 1400.86, 1387.24, 1390.39, 1436.86, 1415.69, 1407.56, 1387.53, 1379.45, 1399.29, 1361.23, 1354.04, 1357.93, 1344.8, 1328.19, 1285.83, 1296.6, 1302.17, 1315.04, 1310.7, 1327.15, 1336.76, 1320.16, 1308.37, 1326.16, 1326.1, 1350.8, 1347.11, 1346.7, 1325.83, 1348.88, 1318.91, 1293.38, 1325.33, 1305.97, 1308.59, 1335.25, 1340.02, 1352.13, 1349.06, 1345.83, 1346.32, 1359.87, 1344.2, 1403.41, 1429.3, 1443.39, 1455.17, 1475.97, 1511.84, 1469.57, 1500.91, 1493.95, 1514.07, 1506.86, 1482.99, 1535.39, 1541.64, 1553.71, 1532.8, 1555.98, 1554.8, 1507.64, 1509.4, 1450.9, 1471.07, 1453.48, 1432.52, 1422.41, 1458.16, 1471.5, 1455.11, 1480.99, 1470.33, 1465.37, 1473.28, 1485.86, 1488.02, 1464.77, 1388.41, 1381.56, 1405.35, 1414.39, 1390.48, 1420.54, 1401.08, 1383.65, 1373.64, 1384.99, 1354.15, 1372.58, 1339.03, 1318.31, 1261.44, 1290.79, 1315.41, 1288.81, 1300.76, 1289.78, 1256.33], "chart_ma25": [1079.82, 1080.64, 1080.98, 1081.8, 1081.58, 1081.88, 1079.27, 1076.17, 1073.03, 1068.87, 1064.54, 1058.36, 1053.47, 1049.46, 1045.76, 1041.36, 1037.63, 1033.68, 1030.23, 1027.19, 1024.75, 1022.0, 1019.32, 1016.23, 1013.29, 1010.88, 1009.28, 1007.6, 1006.82, 1006.72, 1006.31, 1006.19, 1005.53, 1005.0, 1004.48, 1004.31, 1007.38, 1009.59, 1010.17, 1010.43, 1009.78, 1008.84, 1007.81, 1006.52, 1004.77, 1003.25, 1001.92, 1000.36, 999.12, 998.43, 998.1, 997.66, 997.4, 996.22, 994.4, 992.31, 990.17, 988.75, 986.83, 985.17, 983.14, 981.41, 980.06, 979.4, 979.32, 979.1, 979.0, 979.91, 980.41, 980.8, 981.37, 981.31, 981.36, 981.77, 981.65, 981.0, 981.11, 980.9, 981.43, 982.1, 983.21, 984.59, 986.07, 988.2, 990.31, 993.1, 996.96, 1000.7, 1004.37, 1006.89, 1009.2, 1011.15, 1012.99, 1015.34, 1018.43, 1021.36, 1023.71, 1026.56, 1029.68, 1033.46, 1037.69, 1041.96, 1047.26, 1051.9, 1057.92, 1063.66, 1073.28, 1084.47, 1094.65, 1104.72, 1117.99, 1129.48, 1141.56, 1151.87, 1161.79, 1168.95, 1178.22, 1187.28, 1194.96, 1202.93, 1213.64, 1225.42, 1237.05, 1248.58, 1260.29, 1272.07, 1282.53, 1293.88, 1305.68, 1318.01, 1331.03, 1339.15, 1346.45, 1355.43, 1366.09, 1369.61, 1374.88, 1377.01, 1381.08, 1385.48, 1390.93, 1394.9, 1400.12, 1406.52, 1412.2, 1417.65, 1423.5, 1428.75, 1433.99, 1437.63, 1439.04, 1440.56, 1439.71, 1439.03, 1438.25, 1435.9, 1434.17, 1430.85, 1426.22, 1420.62, 1416.97, 1412.21, 1410.11, 1406.7, 1403.17, 1400.08, 1397.22, 1393.06, 1389.44, 1385.82, 1380.42, 1374.52, 1368.46, 1361.23, 1355.82, 1352.24, 1350.24, 1348.64, 1346.89, 1342.45, 1339.78, 1336.23, 1332.46, 1330.3, 1326.57, 1324.46, 1323.71, 1322.99, 1323.29, 1324.12, 1326.52, 1328.51, 1330.82, 1331.98, 1335.69, 1339.78, 1344.04, 1349.44, 1356.15, 1363.57, 1369.31, 1375.32, 1381.19, 1387.89, 1395.13, 1400.49, 1409.15, 1419.08, 1428.22, 1437.29, 1447.19, 1455.97, 1462.67, 1468.96, 1473.04, 1478.05, 1482.33, 1485.24, 1488.37, 1490.56, 1492.24, 1492.71, 1493.75, 1493.52, 1491.66, 1491.81, 1491.21, 1490.97, 1489.0, 1484.26, 1480.2, 1475.0, 1469.91, 1463.38, 1458.89, 1452.7, 1445.85, 1440.49, 1435.51, 1431.64, 1427.7, 1423.13, 1418.56, 1412.12, 1405.42, 1399.18, 1392.53, 1385.32, 1378.1, 1369.74], "chart_ma55": [1027.79, 1028.26, 1028.6, 1028.84, 1028.99, 1029.93, 1031.28, 1032.75, 1034.31, 1035.35, 1036.31, 1035.63, 1035.44, 1035.96, 1036.13, 1036.75, 1037.8, 1038.54, 1039.38, 1040.11, 1040.72, 1041.69, 1042.44, 1043.49, 1043.86, 1043.74, 1043.45, 1042.85, 1042.63, 1042.37, 1042.61, 1042.68, 1042.11, 1042.12, 1041.66, 1041.31, 1039.61, 1037.7, 1035.74, 1033.4, 1031.02, 1029.42, 1027.93, 1026.14, 1024.12, 1021.38, 1019.17, 1016.84, 1014.68, 1012.74, 1011.41, 1009.65, 1008.1, 1006.15, 1004.41, 1002.83, 1001.56, 1000.19, 998.95, 997.84, 996.43, 995.13, 994.01, 993.18, 992.69, 992.18, 993.34, 994.49, 994.75, 994.6, 994.11, 993.57, 993.06, 992.65, 992.04, 991.52, 991.07, 990.63, 990.34, 990.23, 990.25, 990.34, 990.41, 990.48, 990.38, 990.43, 990.93, 991.82, 992.89, 993.78, 994.4, 995.05, 996.04, 997.1, 998.23, 999.37, 1000.33, 1001.59, 1003.18, 1005.08, 1007.18, 1009.27, 1011.95, 1014.33, 1017.27, 1020.05, 1024.71, 1029.99, 1035.22, 1040.52, 1047.55, 1054.25, 1061.27, 1067.91, 1074.06, 1078.87, 1084.51, 1090.23, 1095.08, 1099.87, 1105.98, 1112.34, 1118.47, 1125.07, 1132.12, 1139.31, 1146.18, 1154.01, 1161.56, 1170.17, 1179.16, 1187.46, 1196.15, 1205.22, 1215.06, 1223.19, 1231.66, 1238.97, 1246.49, 1253.69, 1259.7, 1265.4, 1271.78, 1277.87, 1284.11, 1291.64, 1299.77, 1307.45, 1315.37, 1322.67, 1329.17, 1335.66, 1341.8, 1347.63, 1354.16, 1360.16, 1365.73, 1370.5, 1375.36, 1379.93, 1383.78, 1385.72, 1386.99, 1388.34, 1389.35, 1387.91, 1387.1, 1386.1, 1385.86, 1385.94, 1387.76, 1389.0, 1389.81, 1390.95, 1392.17, 1392.17, 1392.4, 1392.52, 1392.32, 1391.51, 1390.93, 1390.14, 1388.04, 1386.55, 1383.82, 1380.8, 1378.7, 1376.33, 1373.72, 1370.27, 1368.33, 1366.02, 1365.11, 1363.55, 1363.31, 1364.51, 1365.88, 1366.77, 1368.05, 1370.06, 1370.2, 1370.5, 1370.9, 1371.36, 1372.19, 1373.41, 1375.86, 1378.67, 1381.64, 1383.38, 1385.93, 1388.61, 1390.79, 1393.15, 1394.09, 1396.09, 1397.9, 1399.25, 1400.67, 1403.03, 1406.4, 1409.29, 1412.54, 1415.36, 1418.17, 1420.83, 1423.54, 1426.59, 1429.44, 1430.57, 1431.58, 1432.57, 1433.79, 1434.59, 1436.31, 1437.26, 1438.44, 1439.9, 1440.98, 1441.86, 1443.02, 1443.09, 1442.69, 1441.04, 1439.98, 1439.43, 1438.39, 1437.31, 1436.32, 1433.65], "chart_ma100": [1013.46, 1014.1, 1014.78, 1015.18, 1015.61, 1016.26, 1016.97, 1017.5, 1018.35, 1019.03, 1019.25, 1018.51, 1017.62, 1017.17, 1016.35, 1015.96, 1015.49, 1015.28, 1015.55, 1016.04, 1016.14, 1016.31, 1016.36, 1016.79, 1017.24, 1017.77, 1017.94, 1018.14, 1018.2, 1018.3, 1018.55, 1018.82, 1018.87, 1018.84, 1018.9, 1018.93, 1018.86, 1018.71, 1018.76, 1018.99, 1019.27, 1019.36, 1019.24, 1018.95, 1018.69, 1018.26, 1017.95, 1017.45, 1017.08, 1016.73, 1016.81, 1017.17, 1017.73, 1018.17, 1018.32, 1018.45, 1018.57, 1018.77, 1018.88, 1018.74, 1018.6, 1018.61, 1018.57, 1018.67, 1018.86, 1019.01, 1019.23, 1019.52, 1019.91, 1019.91, 1019.65, 1019.31, 1018.73, 1018.4, 1017.82, 1017.45, 1017.17, 1016.72, 1016.57, 1016.2, 1015.93, 1015.05, 1014.13, 1013.27, 1012.21, 1011.27, 1011.03, 1010.95, 1010.85, 1010.6, 1009.86, 1009.15, 1008.6, 1008.13, 1007.8, 1007.68, 1007.24, 1006.9, 1006.7, 1006.71, 1006.92, 1007.5, 1008.29, 1009.1, 1010.29, 1011.37, 1013.56, 1016.21, 1018.67, 1021.17, 1024.63, 1028.81, 1032.98, 1036.45, 1039.61, 1041.76, 1044.3, 1047.0, 1049.31, 1051.73, 1054.9, 1058.09, 1061.33, 1064.79, 1068.46, 1072.22, 1075.81, 1079.86, 1083.81, 1088.11, 1092.55, 1096.8, 1101.44, 1106.28, 1111.57, 1115.96, 1120.68, 1124.83, 1129.18, 1133.37, 1137.05, 1140.82, 1145.07, 1149.31, 1153.59, 1158.51, 1163.48, 1168.43, 1173.51, 1178.26, 1182.45, 1186.54, 1190.44, 1194.51, 1199.07, 1203.45, 1207.8, 1211.96, 1216.13, 1220.44, 1224.42, 1228.38, 1232.35, 1236.01, 1239.33, 1242.29, 1245.37, 1248.36, 1251.56, 1254.85, 1258.27, 1261.79, 1265.21, 1268.37, 1271.8, 1275.26, 1278.82, 1282.37, 1285.88, 1289.16, 1292.59, 1295.7, 1298.56, 1301.65, 1304.5, 1307.26, 1310.07, 1312.92, 1315.73, 1318.64, 1321.62, 1324.71, 1327.82, 1330.72, 1334.16, 1337.87, 1341.87, 1345.93, 1349.99, 1354.33, 1358.17, 1362.16, 1365.85, 1369.87, 1373.46, 1376.8, 1379.67, 1382.21, 1385.04, 1387.64, 1389.56, 1391.69, 1393.2, 1395.01, 1396.45, 1398.89, 1400.74, 1402.31, 1404.08, 1406.07, 1407.52, 1408.69, 1410.1, 1411.22, 1412.17, 1413.1, 1414.33, 1415.13, 1415.7, 1415.02, 1414.09, 1413.64, 1413.08, 1412.03, 1410.84, 1410.33, 1409.43, 1409.07, 1408.62, 1407.99, 1408.09, 1407.8, 1406.92, 1405.48, 1404.37, 1402.91, 1400.95, 1399.24, 1397.25, 1395.2], "chart_ma250": [853.71, 854.67, 855.58, 856.44, 857.29, 858.24, 859.12, 859.91, 860.76, 861.6, 862.44, 862.96, 863.6, 864.43, 865.38, 866.38, 867.38, 868.31, 869.29, 870.33, 871.4, 872.48, 873.6, 874.7, 875.76, 876.77, 877.85, 878.86, 879.93, 881.11, 882.31, 883.5, 884.57, 885.68, 886.71, 887.67, 888.6, 889.47, 890.37, 891.32, 892.18, 893.08, 893.94, 894.83, 895.73, 896.62, 897.55, 898.44, 899.38, 900.3, 901.32, 902.38, 903.41, 904.4, 905.39, 906.33, 907.25, 908.13, 908.97, 909.83, 910.71, 911.59, 912.42, 913.31, 914.26, 915.2, 916.12, 917.11, 918.08, 918.99, 919.9, 920.88, 921.92, 922.97, 924.04, 925.12, 926.26, 927.43, 928.61, 929.84, 931.06, 932.32, 933.51, 934.74, 935.95, 937.21, 938.56, 939.85, 941.22, 942.51, 943.7, 944.84, 946.16, 947.52, 948.9, 950.26, 951.6, 952.96, 954.26, 955.62, 957.06, 958.65, 960.29, 961.91, 963.67, 965.44, 967.6, 969.91, 972.19, 974.45, 977.09, 979.64, 982.29, 984.84, 987.33, 989.49, 991.83, 994.24, 996.54, 998.86, 1001.38, 1004.06, 1006.72, 1009.46, 1012.26, 1015.13, 1017.96, 1020.95, 1023.93, 1027.12, 1030.39, 1033.61, 1036.88, 1040.27, 1043.86, 1047.0, 1050.22, 1053.09, 1055.85, 1058.03, 1059.38, 1060.86, 1062.67, 1064.7, 1066.6, 1068.85, 1071.29, 1073.66, 1075.7, 1077.54, 1079.26, 1080.95, 1082.59, 1084.18, 1085.98, 1087.75, 1089.54, 1091.21, 1092.97, 1094.75, 1096.21, 1097.63, 1098.95, 1100.23, 1101.25, 1102.19, 1103.13, 1104.23, 1105.54, 1106.91, 1108.23, 1109.56, 1110.8, 1112.15, 1113.63, 1115.12, 1116.58, 1118.04, 1119.39, 1120.63, 1122.01, 1123.29, 1124.45, 1125.7, 1126.91, 1128.1, 1129.41, 1130.73, 1132.18, 1133.67, 1135.19, 1136.64, 1138.11, 1139.44, 1141.06, 1142.72, 1144.43, 1146.14, 1147.97, 1149.94, 1151.86, 1154.04, 1156.25, 1158.55, 1160.72, 1162.79, 1165.08, 1167.45, 1169.85, 1172.06, 1174.37, 1176.76, 1178.93, 1181.1, 1182.99, 1184.98, 1186.93, 1188.76, 1190.63, 1192.53, 1194.37, 1196.11, 1197.89, 1199.67, 1201.37, 1203.2, 1205.05, 1206.85, 1208.67, 1210.08, 1211.48, 1212.72, 1213.98, 1215.13, 1216.3, 1217.4, 1218.62, 1219.87, 1221.08, 1222.16, 1223.17, 1224.09, 1224.95, 1225.59, 1226.38, 1227.36, 1228.17, 1229.04, 1229.84, 1230.55], "chart_vol": [28748.8, 35651.53, 30676.76, 28414.32, 21235.94, 31149.21, 24370.53, 26610.63, 28541.91, 18036.03, 27916.86, 55444.83, 40548.05, 50318.54, 37829.57, 43608.42, 31846.37, 22436.64, 28046.35, 24115.75, 16711.03, 22950.8, 23588.92, 23097.08, 20050.77, 20273.71, 18698.56, 18713.61, 26295.61, 27521.1, 27590.48, 21702.34, 23619.03, 26523.88, 22751.58, 21853.07, 18253.5, 17183.73, 17660.74, 17515.02, 17383.22, 16440.07, 18695.83, 16183.74, 16420.11, 14636.47, 17867.66, 17632.79, 23096.82, 18281.8, 21630.24, 17534.38, 19531.47, 31553.16, 21328.05, 22227.39, 34036.18, 22286.79, 20720.64, 20442.75, 19631.9, 18132.95, 24994.97, 26980.34, 32673.75, 30735.3, 27908.26, 29554.5, 28040.48, 23991.64, 19704.36, 24524.01, 17519.39, 23087.55, 20413.68, 22167.64, 31328.3, 22922.46, 26658.72, 26893.24, 28343.84, 26946.17, 26906.56, 31505.2, 33385.94, 32633.73, 41937.23, 35094.15, 40516.76, 35323.14, 45684.32, 33049.27, 33222.28, 26801.64, 34761.26, 38436.15, 33381.5, 30339.85, 53180.29, 47687.32, 65652.3, 53157.19, 68521.27, 54923.34, 65459.16, 65718.25, 110430.32, 134540.23, 82091.14, 121089.07, 135515.37, 111147.79, 95841.46, 90061.91, 68153.42, 90476.81, 74741.46, 70266.2, 68963.45, 71142.42, 106001.67, 115807.8, 97644.99, 94773.3, 92229.46, 139607.85, 101284.46, 114241.89, 115457.33, 126825.42, 102948.52, 93897.74, 96297.21, 99799.14, 146061.49, 119486.42, 111559.79, 117052.46, 79721.09, 74172.17, 72841.74, 68934.85, 76299.65, 70472.6, 55402.36, 98926.19, 107028.88, 87813.33, 86154.05, 98812.18, 94950.54, 77516.25, 68382.29, 62705.43, 90991.81, 64751.08, 72773.49, 64848.48, 61853.44, 62760.07, 61292.06, 59542.32, 61223.64, 45504.67, 43744.81, 56030.26, 50827.08, 52735.46, 57575.97, 61809.59, 49577.48, 65492.75, 47078.54, 43255.41, 48747.63, 49821.5, 63951.61, 54818.7, 55356.79, 53240.11, 83865.89, 58345.71, 47152.14, 50178.49, 38718.65, 38885.17, 55138.66, 52823.8, 51088.3, 44828.07, 45190.36, 58488.94, 59271.33, 49284.58, 81187.61, 80797.91, 87127.78, 99247.98, 91006.17, 106640.24, 104449.15, 123880.67, 95846.4, 116789.71, 93307.39, 97763.53, 117311.2, 114471.73, 110767.21, 108916.69, 102142.7, 104613.18, 98586.26, 92994.63, 86595.57, 98826.24, 76593.07, 67731.47, 62257.7, 72909.86, 68410.38, 48644.9, 69329.19, 61592.83, 68936.0, 70042.25, 83624.47, 78394.9, 79348.05, 88181.85, 65494.66, 82290.37, 60117.75, 74328.8, 65103.8, 65494.49, 62958.79, 66780.73, 73815.88, 58419.45, 63648.19, 62007.19, 72635.99, 73743.21, 67331.74, 71581.28, 55519.45, 52752.42, 53432.65, 57608.8], "chart_vol_ma": [48706.13, 46426.5, 44879.64, 43207.4, 40983.8, 39345.38, 37293.72, 35998.76, 35024.77, 33852.81, 32132.41, 32605.55, 32490.51, 33108.76, 33014.75, 33278.18, 32846.11, 32349.75, 32087.99, 31777.35, 31175.46, 30540.43, 30186.04, 29920.17, 29860.91, 29317.14, 29033.54, 28638.69, 28526.38, 29000.63, 28984.31, 27297.18, 26450.73, 25261.0, 24507.1, 23419.33, 22739.69, 22477.05, 21957.76, 21627.73, 21661.34, 21335.8, 21091.15, 20745.48, 20563.95, 20282.08, 20240.54, 20186.5, 20026.56, 19564.59, 19266.58, 19058.18, 18853.81, 19105.27, 19034.09, 19052.81, 19841.94, 20097.1, 20250.09, 20396.48, 20508.91, 20593.56, 20908.51, 21448.34, 22261.03, 23065.97, 23568.0, 24164.08, 24411.26, 24696.76, 24600.46, 24949.94, 24849.34, 24426.06, 24380.34, 24377.35, 24241.96, 24273.74, 24570.65, 24893.17, 25328.77, 25769.43, 25865.01, 26091.25, 26126.86, 26221.78, 26923.23, 27200.21, 27824.03, 28390.6, 29689.6, 30115.86, 30901.01, 31086.71, 31804.09, 32617.52, 32720.18, 33091.05, 34417.13, 35456.83, 37322.25, 38632.8, 40713.54, 41884.45, 43488.11, 45142.33, 48566.99, 53539.29, 55618.01, 59906.31, 64397.86, 68302.79, 71433.74, 74596.76, 76266.37, 78868.4, 80936.4, 82932.71, 83721.87, 84894.63, 86912.1, 90044.63, 91500.81, 93493.31, 94831.83, 98526.31, 98069.01, 97054.1, 98722.41, 99009.22, 97380.88, 96518.38, 96541.17, 97028.03, 100923.43, 102373.91, 104214.83, 106554.14, 107092.02, 107243.51, 105585.51, 103241.87, 102174.6, 100959.56, 99118.21, 97084.13, 97371.35, 96049.92, 94584.76, 93184.09, 92784.19, 91965.12, 90569.37, 88714.69, 85961.2, 83224.44, 81285.12, 78674.92, 77781.54, 77210.94, 76633.45, 76163.82, 75410.02, 74161.63, 73578.75, 71433.95, 68623.86, 66869.97, 65441.07, 63590.94, 61322.28, 60721.11, 59655.92, 58683.42, 56571.21, 55824.73, 55383.64, 54882.15, 54557.32, 54081.32, 55210.01, 55150.18, 54446.61, 54680.3, 54428.99, 53571.73, 53787.31, 53791.73, 53467.35, 52618.27, 52398.91, 52048.72, 52658.36, 52959.82, 54581.82, 56130.64, 57289.45, 59510.91, 61293.38, 63963.39, 64992.55, 68269.3, 70704.01, 74034.57, 76764.01, 79707.93, 82816.56, 85898.95, 88882.9, 92087.33, 94934.95, 97241.16, 99206.9, 101392.41, 101662.8, 102564.22, 102037.49, 100461.66, 99024.24, 97337.72, 95535.78, 91773.99, 90448.13, 87688.29, 86469.72, 85083.65, 83399.32, 81595.48, 80024.52, 78987.77, 77155.37, 76039.23, 74115.81, 73182.52, 72107.93, 70441.34, 69759.63, 69712.09, 70290.0, 69565.48, 69327.37, 69995.48, 70160.82, 70768.34, 70688.13, 70765.08, 69359.83, 68077.7, 66781.93, 65253.28]}, "000300_SH": {"name": "沪深300", "curr_date": "2026-03-31", "curr_price": 4450.05, "pct_5d": -0.55, "pct_20d": -4.42, "pct_60d": -4.15, "pct_ytd": -5.67, "from_52w_high": -7.11, "from_52w_low": 23.98, "ma25": 4611.6, "ma55": 4669.95, "ma100": 4636.47, "ma250": 4324.08, "ma850": 3906.62, "dist_ma25": -3.5, "dist_ma100": -4.02, "dist_ma250": 2.91, "dist_ma850": 13.91, "l1_signal": "牛", "l2_signal": "上升趋势", "l3_above_lifeline": false, "l4_above_mainforce": false, "l4_ma25_slope": "下行", "ma_aligned_bull": false, "ma_aligned_bear": false, "atr_pct": 1.69, "vol_ratio": 0.87, "vol_extreme": false, "div_point_a": 4448.05, "div_point_a_date": "2025-11-24", "angle_60d": -0.04, "chart_dates": ["2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-18", "2025-04-21", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31"], "chart_close": [3974.99, 3914.7, 3934.85, 3932.3, 3919.36, 3932.41, 3915.17, 3887.31, 3887.68, 3884.39, 3861.5, 3589.44, 3650.76, 3686.79, 3735.12, 3750.52, 3759.14, 3761.23, 3772.82, 3772.22, 3772.52, 3784.88, 3783.95, 3786.88, 3784.36, 3786.99, 3781.62, 3775.08, 3770.57, 3808.54, 3831.63, 3852.9, 3846.16, 3890.61, 3896.26, 3943.21, 3907.2, 3889.09, 3877.15, 3898.17, 3916.38, 3913.87, 3882.27, 3860.11, 3839.4, 3836.24, 3858.7, 3840.23, 3852.01, 3868.74, 3877.56, 3873.98, 3885.25, 3865.47, 3894.63, 3892.2, 3864.18, 3873.8, 3870.38, 3874.97, 3843.09, 3846.64, 3857.9, 3904.03, 3960.07, 3946.02, 3921.76, 3936.08, 3942.76, 3943.68, 3968.07, 3982.2, 3965.17, 3998.45, 3991.4, 4010.02, 4014.81, 4017.67, 4019.06, 4007.2, 4034.49, 4058.55, 4085.61, 4118.96, 4119.77, 4149.04, 4127.16, 4135.82, 4152.02, 4151.24, 4075.59, 4054.93, 4070.7, 4103.45, 4113.49, 4114.67, 4104.97, 4122.51, 4143.83, 4176.58, 4173.31, 4202.35, 4239.41, 4223.37, 4271.4, 4288.07, 4378.0, 4469.22, 4452.59, 4386.13, 4463.78, 4496.76, 4523.71, 4490.45, 4459.83, 4365.21, 4460.32, 4467.57, 4436.26, 4445.36, 4548.03, 4522.0, 4533.06, 4523.34, 4551.02, 4498.11, 4501.92, 4522.61, 4519.78, 4566.07, 4593.49, 4550.05, 4620.05, 4640.69, 4709.48, 4616.83, 4593.98, 4539.06, 4606.29, 4618.42, 4514.23, 4538.22, 4607.87, 4592.57, 4606.34, 4660.68, 4716.02, 4691.97, 4747.84, 4709.91, 4640.67, 4653.4, 4618.7, 4627.26, 4693.4, 4678.79, 4695.05, 4652.17, 4645.91, 4702.07, 4628.14, 4598.05, 4568.19, 4588.29, 4564.95, 4453.61, 4448.05, 4490.4, 4517.63, 4515.4, 4526.66, 4576.49, 4554.33, 4531.05, 4546.57, 4584.54, 4621.75, 4598.22, 4591.83, 4552.18, 4580.95, 4552.06, 4497.55, 4579.88, 4552.79, 4568.18, 4611.62, 4620.73, 4634.06, 4642.54, 4657.24, 4639.37, 4651.28, 4629.94, 4717.75, 4790.69, 4776.67, 4737.65, 4758.92, 4789.92, 4761.03, 4741.93, 4751.43, 4731.87, 4734.46, 4718.88, 4723.07, 4723.71, 4702.5, 4706.96, 4705.69, 4717.99, 4753.87, 4706.34, 4605.98, 4660.11, 4698.68, 4670.42, 4643.6, 4719.06, 4724.3, 4713.82, 4719.58, 4660.41, 4707.54, 4735.89, 4726.87, 4710.65, 4728.67, 4655.9, 4602.62, 4647.69, 4660.44, 4615.46, 4674.76, 4704.5, 4687.56, 4669.14, 4671.56, 4637.44, 4658.33, 4583.25, 4567.02, 4418.0, 4474.72, 4537.47, 4477.53, 4502.57, 4491.95, 4450.05], "chart_ma25": [3945.68, 3944.71, 3944.2, 3944.98, 3944.15, 3944.29, 3941.76, 3938.47, 3936.95, 3933.92, 3929.66, 3917.64, 3908.13, 3900.19, 3893.49, 3885.26, 3877.87, 3871.17, 3864.42, 3858.22, 3852.66, 3843.79, 3835.28, 3826.44, 3817.41, 3809.89, 3804.57, 3798.18, 3791.71, 3787.28, 3783.24, 3780.75, 3779.11, 3779.22, 3779.7, 3782.97, 3795.68, 3805.21, 3812.83, 3819.35, 3825.98, 3832.17, 3837.01, 3840.5, 3843.19, 3845.74, 3848.69, 3850.94, 3853.55, 3856.93, 3860.55, 3864.24, 3868.65, 3872.45, 3875.89, 3878.31, 3878.76, 3879.87, 3879.06, 3878.21, 3874.2, 3871.78, 3870.53, 3871.61, 3874.08, 3875.27, 3875.59, 3877.74, 3881.04, 3885.21, 3890.49, 3895.43, 3900.43, 3906.28, 3911.19, 3916.49, 3922.12, 3927.42, 3933.56, 3938.06, 3943.76, 3951.53, 3960.0, 3969.95, 3979.74, 3991.98, 4003.2, 4014.31, 4024.23, 4031.88, 4037.06, 4042.39, 4047.77, 4054.2, 4060.99, 4066.86, 4071.77, 4078.06, 4083.88, 4091.29, 4097.82, 4105.32, 4114.19, 4122.36, 4132.93, 4143.07, 4155.85, 4171.19, 4184.54, 4195.19, 4207.78, 4222.57, 4238.08, 4251.62, 4263.96, 4275.55, 4291.76, 4307.64, 4320.95, 4334.23, 4351.56, 4368.24, 4384.66, 4399.84, 4414.82, 4427.81, 4439.8, 4451.12, 4462.98, 4474.77, 4486.98, 4493.87, 4499.9, 4507.42, 4520.36, 4526.48, 4530.37, 4530.98, 4535.62, 4541.96, 4547.92, 4551.04, 4556.65, 4562.9, 4569.34, 4573.85, 4581.61, 4587.96, 4596.94, 4603.3, 4609.0, 4615.06, 4618.9, 4623.2, 4628.3, 4631.71, 4637.51, 4638.79, 4639.0, 4638.71, 4639.16, 4639.32, 4640.49, 4639.77, 4637.63, 4635.2, 4631.6, 4626.9, 4623.9, 4620.26, 4614.9, 4609.32, 4603.81, 4595.14, 4588.61, 4586.36, 4585.1, 4584.28, 4582.86, 4577.21, 4573.3, 4567.58, 4561.39, 4558.75, 4552.78, 4550.38, 4550.93, 4553.03, 4554.86, 4557.96, 4566.11, 4573.76, 4580.2, 4584.69, 4592.78, 4603.34, 4611.35, 4618.68, 4627.8, 4637.53, 4644.59, 4649.4, 4655.53, 4661.13, 4668.42, 4673.94, 4680.78, 4689.82, 4694.73, 4700.9, 4706.4, 4710.65, 4715.98, 4718.87, 4717.41, 4717.52, 4719.89, 4720.66, 4721.2, 4721.26, 4718.6, 4716.09, 4715.36, 4711.42, 4708.13, 4707.12, 4706.52, 4704.89, 4704.76, 4701.62, 4696.97, 4693.95, 4691.42, 4687.94, 4686.65, 4686.61, 4685.39, 4682.0, 4680.61, 4681.87, 4681.8, 4677.18, 4673.04, 4664.02, 4654.24, 4646.77, 4637.32, 4628.64, 4621.9, 4611.6], "chart_ma55": [3890.85, 3889.56, 3888.61, 3887.72, 3886.27, 3886.23, 3887.95, 3889.99, 3892.15, 3893.75, 3895.06, 3891.6, 3890.12, 3889.47, 3887.91, 3887.09, 3886.34, 3885.41, 3884.37, 3883.28, 3882.83, 3882.49, 3881.6, 3881.05, 3880.85, 3879.84, 3877.82, 3875.53, 3873.48, 3871.46, 3870.12, 3868.56, 3866.71, 3866.31, 3865.51, 3865.77, 3864.48, 3863.01, 3862.13, 3861.01, 3860.07, 3860.5, 3860.39, 3859.93, 3858.78, 3856.6, 3855.05, 3853.44, 3851.81, 3850.75, 3850.13, 3847.72, 3845.69, 3843.11, 3841.01, 3839.5, 3838.58, 3837.47, 3836.35, 3835.54, 3833.91, 3832.67, 3832.13, 3832.43, 3833.81, 3835.34, 3841.39, 3846.57, 3851.23, 3855.02, 3858.98, 3863.03, 3866.74, 3870.84, 3874.83, 3879.14, 3883.33, 3887.57, 3891.8, 3895.85, 3900.35, 3905.38, 3911.03, 3917.36, 3923.02, 3928.79, 3933.78, 3939.05, 3943.8, 3948.44, 3950.84, 3953.53, 3956.83, 3960.94, 3964.86, 3968.46, 3971.94, 3976.31, 3981.47, 3987.6, 3993.72, 3999.97, 4007.23, 4013.98, 4021.3, 4028.77, 4037.93, 4048.55, 4059.22, 4068.16, 4078.55, 4090.05, 4101.87, 4113.15, 4123.78, 4133.27, 4144.43, 4155.51, 4165.19, 4174.02, 4184.96, 4195.87, 4206.73, 4217.28, 4228.33, 4237.96, 4247.41, 4257.55, 4267.03, 4277.48, 4288.08, 4297.82, 4308.77, 4320.07, 4332.84, 4343.43, 4353.16, 4361.41, 4370.27, 4379.33, 4385.97, 4393.45, 4402.03, 4410.04, 4418.32, 4428.95, 4440.97, 4452.27, 4463.98, 4474.83, 4484.39, 4494.36, 4503.39, 4512.18, 4521.57, 4530.76, 4539.72, 4547.23, 4554.91, 4562.74, 4568.92, 4572.92, 4574.72, 4577.19, 4580.44, 4580.26, 4579.37, 4578.76, 4579.26, 4580.27, 4583.2, 4585.32, 4586.89, 4588.62, 4590.46, 4591.12, 4592.93, 4594.12, 4595.36, 4595.39, 4596.89, 4597.8, 4597.35, 4598.44, 4598.2, 4597.74, 4598.86, 4598.87, 4598.75, 4597.53, 4598.27, 4599.09, 4601.13, 4601.56, 4603.37, 4608.4, 4612.73, 4615.09, 4618.12, 4621.45, 4623.28, 4623.75, 4624.83, 4624.54, 4624.99, 4626.41, 4627.68, 4629.58, 4630.95, 4631.2, 4631.69, 4632.11, 4633.95, 4635.05, 4633.31, 4633.89, 4635.72, 4637.58, 4638.58, 4641.38, 4646.3, 4651.14, 4655.3, 4657.9, 4661.39, 4665.2, 4667.93, 4670.77, 4674.37, 4676.35, 4676.68, 4677.16, 4678.29, 4678.72, 4680.94, 4683.19, 4685.65, 4688.77, 4690.44, 4691.98, 4693.62, 4693.1, 4692.13, 4688.2, 4685.15, 4682.97, 4680.03, 4677.32, 4674.81, 4669.95], "chart_ma100": [3923.7, 3923.12, 3923.18, 3922.94, 3922.49, 3922.57, 3922.83, 3922.79, 3922.76, 3922.16, 3920.33, 3915.98, 3911.03, 3906.86, 3902.9, 3899.55, 3896.03, 3893.25, 3891.29, 3889.5, 3887.46, 3885.45, 3883.4, 3882.61, 3881.97, 3881.44, 3880.19, 3879.21, 3877.75, 3876.36, 3875.16, 3874.38, 3873.63, 3872.8, 3872.1, 3871.57, 3870.76, 3869.36, 3868.8, 3868.67, 3868.61, 3868.33, 3867.7, 3867.02, 3866.08, 3864.61, 3863.34, 3861.86, 3860.57, 3859.27, 3858.7, 3859.23, 3860.33, 3861.3, 3862.28, 3863.31, 3864.16, 3865.57, 3867.05, 3867.59, 3868.06, 3868.53, 3868.98, 3869.73, 3871.0, 3872.49, 3873.67, 3874.7, 3875.96, 3877.45, 3878.7, 3879.59, 3880.23, 3881.39, 3882.1, 3883.15, 3883.91, 3884.61, 3885.67, 3886.35, 3887.4, 3888.2, 3889.36, 3891.29, 3892.89, 3894.7, 3897.07, 3899.55, 3902.21, 3904.7, 3905.89, 3907.0, 3908.42, 3910.04, 3911.91, 3913.94, 3914.92, 3916.18, 3917.54, 3919.2, 3921.19, 3924.06, 3927.11, 3930.02, 3933.54, 3937.1, 3941.72, 3947.54, 3953.19, 3958.21, 3964.23, 3973.31, 3982.04, 3990.07, 3997.32, 4003.47, 4010.48, 4017.54, 4024.18, 4030.91, 4038.66, 4046.03, 4053.52, 4060.89, 4068.56, 4075.67, 4082.87, 4090.35, 4097.84, 4105.41, 4113.03, 4120.0, 4127.74, 4135.24, 4143.37, 4150.11, 4156.98, 4163.48, 4170.77, 4177.97, 4183.95, 4190.19, 4197.45, 4204.77, 4212.44, 4220.69, 4229.26, 4237.78, 4246.74, 4255.15, 4262.78, 4270.57, 4277.91, 4285.53, 4293.51, 4301.38, 4309.69, 4317.47, 4325.23, 4333.5, 4341.35, 4348.86, 4355.97, 4362.81, 4368.86, 4373.93, 4379.2, 4384.74, 4390.49, 4396.21, 4401.79, 4407.73, 4413.63, 4418.95, 4424.5, 4430.25, 4436.32, 4442.12, 4447.85, 4453.3, 4458.77, 4463.7, 4467.82, 4472.43, 4476.76, 4480.95, 4485.8, 4490.65, 4495.47, 4500.38, 4506.2, 4512.04, 4517.85, 4523.11, 4529.15, 4535.91, 4542.63, 4548.78, 4554.93, 4561.07, 4566.94, 4572.34, 4577.46, 4582.54, 4587.17, 4591.48, 4594.93, 4597.48, 4599.98, 4603.19, 4605.6, 4607.82, 4610.12, 4612.28, 4613.74, 4616.69, 4619.07, 4621.1, 4623.17, 4625.91, 4627.67, 4629.59, 4631.46, 4632.83, 4634.39, 4636.77, 4639.02, 4640.9, 4642.99, 4643.89, 4643.98, 4644.96, 4645.36, 4645.11, 4644.76, 4645.64, 4646.57, 4647.87, 4648.53, 4648.72, 4650.16, 4650.61, 4650.2, 4648.45, 4647.14, 4645.9, 4643.52, 4641.63, 4639.07, 4636.47], "chart_ma250": [3677.16, 3678.64, 3680.02, 3681.36, 3682.75, 3684.23, 3685.61, 3686.75, 3687.99, 3689.18, 3690.3, 3690.48, 3690.98, 3691.55, 3692.48, 3693.4, 3694.29, 3694.95, 3695.72, 3696.54, 3697.48, 3698.49, 3699.6, 3700.73, 3701.97, 3702.92, 3704.0, 3704.84, 3705.64, 3706.71, 3707.91, 3709.3, 3710.6, 3712.04, 3713.29, 3714.57, 3715.78, 3716.7, 3717.57, 3718.65, 3719.65, 3720.64, 3721.51, 3722.33, 3723.18, 3723.96, 3724.69, 3725.28, 3725.99, 3726.72, 3727.67, 3728.76, 3729.76, 3730.78, 3731.91, 3733.1, 3734.23, 3735.37, 3736.39, 3737.51, 3738.52, 3739.61, 3740.87, 3742.31, 3744.04, 3745.66, 3747.2, 3748.76, 3750.42, 3752.18, 3754.07, 3756.09, 3758.12, 3760.2, 3762.34, 3764.54, 3766.68, 3768.87, 3771.09, 3773.34, 3775.75, 3778.38, 3780.96, 3783.72, 3786.33, 3789.03, 3791.64, 3794.19, 3796.79, 3799.31, 3801.46, 3803.62, 3806.14, 3808.88, 3811.74, 3814.56, 3817.42, 3820.43, 3823.24, 3826.26, 3829.42, 3832.86, 3836.44, 3839.97, 3843.68, 3847.51, 3851.72, 3856.26, 3860.83, 3865.01, 3869.48, 3874.04, 3878.8, 3883.48, 3888.07, 3892.22, 3896.76, 3901.41, 3906.01, 3910.68, 3915.59, 3920.61, 3925.65, 3930.74, 3935.91, 3940.98, 3946.21, 3951.52, 3956.86, 3962.43, 3968.17, 3973.68, 3979.38, 3985.14, 3991.12, 3996.18, 4000.95, 4004.93, 4008.54, 4010.94, 4011.97, 4014.3, 4016.74, 4019.57, 4022.15, 4025.36, 4028.9, 4032.52, 4035.81, 4038.91, 4041.64, 4044.36, 4047.12, 4049.8, 4052.72, 4055.73, 4058.96, 4062.0, 4065.03, 4068.05, 4070.39, 4072.68, 4074.37, 4076.31, 4078.05, 4079.52, 4080.87, 4082.67, 4084.86, 4087.12, 4089.32, 4091.69, 4093.95, 4096.61, 4099.4, 4102.38, 4105.24, 4108.14, 4110.84, 4113.26, 4115.78, 4118.26, 4120.57, 4122.99, 4125.34, 4127.63, 4130.12, 4132.49, 4135.29, 4138.21, 4141.16, 4143.95, 4146.77, 4149.58, 4152.71, 4155.94, 4159.11, 4162.11, 4165.22, 4168.38, 4171.69, 4175.37, 4179.28, 4183.13, 4186.88, 4190.6, 4194.37, 4198.34, 4202.26, 4205.8, 4209.44, 4213.11, 4216.88, 4220.39, 4223.48, 4226.93, 4230.51, 4233.86, 4237.17, 4240.86, 4244.39, 4247.67, 4250.95, 4254.06, 4257.21, 4260.53, 4263.68, 4266.74, 4270.0, 4272.86, 4275.56, 4278.23, 4281.0, 4283.76, 4286.62, 4289.56, 4292.75, 4295.87, 4299.02, 4301.96, 4304.77, 4307.32, 4309.88, 4311.78, 4313.97, 4316.48, 4318.36, 4320.38, 4322.32, 4324.08], "chart_vol": [260020.68, 309348.61, 266051.44, 239246.31, 220943.16, 232173.61, 213379.19, 268480.32, 246041.67, 198267.52, 263684.68, 512971.79, 464021.09, 455031.07, 403842.56, 318535.14, 292571.3, 228604.62, 261711.09, 209012.32, 173109.38, 208085.68, 210200.7, 247117.39, 205483.05, 220535.05, 210635.32, 197462.74, 244820.46, 267937.09, 286010.74, 246987.28, 216697.94, 296122.95, 267586.4, 319465.23, 241464.94, 208835.66, 184888.17, 201636.7, 217037.74, 197511.41, 232945.38, 208876.79, 178466.76, 162496.37, 209459.6, 199389.75, 226782.77, 211736.18, 231749.28, 202034.74, 262023.67, 263647.55, 257217.7, 260239.58, 309172.35, 246860.98, 220399.82, 230553.86, 234840.18, 213522.82, 232482.22, 294228.72, 361727.25, 328102.85, 343468.23, 288821.43, 236070.34, 246637.85, 269609.57, 290512.99, 225106.99, 292089.83, 305398.8, 347836.7, 443780.79, 321415.95, 353524.57, 300656.8, 325516.87, 354244.44, 377938.56, 450874.01, 470330.9, 487000.04, 430445.51, 406792.87, 428764.31, 445168.47, 492142.57, 359685.16, 295976.83, 306934.26, 307674.63, 358108.37, 308507.69, 360685.83, 383088.42, 462776.75, 485075.64, 518686.87, 635365.87, 553536.2, 538815.31, 558521.27, 675935.08, 823681.96, 627950.45, 785098.48, 739423.6, 831194.07, 770378.29, 777999.3, 655697.12, 773124.6, 664166.97, 683630.88, 562861.1, 535539.35, 693156.67, 689576.08, 613314.65, 613728.33, 608454.2, 839987.13, 603887.06, 563149.16, 680513.63, 629161.5, 669866.99, 598723.9, 693395.23, 664624.1, 862208.01, 792743.05, 714001.63, 808959.0, 607326.35, 560567.19, 559085.97, 505798.83, 551390.25, 440935.3, 420800.21, 551986.65, 672670.37, 571563.26, 645898.69, 719956.29, 680712.25, 557602.94, 505177.7, 468361.16, 553641.78, 507573.85, 593977.13, 477629.08, 492308.87, 510060.68, 444720.43, 438940.1, 420150.13, 385230.48, 415064.82, 481295.81, 425807.47, 411523.8, 427361.38, 417789.84, 341832.32, 463861.59, 364366.43, 374486.17, 348767.4, 412146.81, 496716.2, 452113.88, 401452.78, 432431.09, 523863.22, 424383.39, 390500.13, 452504.74, 382102.4, 371577.14, 448240.6, 433141.33, 406375.64, 385356.06, 460426.93, 482613.54, 457185.49, 444491.55, 630577.35, 725414.57, 664897.93, 630655.64, 668788.81, 799954.08, 801054.98, 891334.22, 674058.68, 785624.17, 655149.26, 671960.69, 665330.51, 690235.25, 755617.74, 796832.97, 715267.91, 829414.07, 917966.16, 750564.89, 725920.38, 666626.84, 636018.59, 550433.17, 505759.81, 522757.27, 450339.58, 433428.61, 490473.85, 452878.59, 526084.24, 596903.87, 599848.92, 578820.99, 752681.94, 801659.24, 608923.13, 570443.78, 487807.08, 665821.51, 557607.88, 579564.4, 572105.48, 580305.61, 598799.1, 578501.51, 524173.91, 547850.3, 615463.09, 671719.76, 530149.39, 550428.16, 471127.5, 440517.56, 444629.52, 484558.11], "chart_vol_ma": [352447.46, 342682.61, 333230.75, 326293.99, 318018.24, 308213.28, 297866.84, 293487.97, 290903.09, 286273.44, 279586.7, 288203.96, 296776.26, 305153.79, 309864.56, 311032.66, 303116.46, 298601.47, 297050.06, 293196.91, 288851.34, 283788.2, 280995.66, 281389.21, 280616.21, 280034.28, 279897.09, 276346.21, 276285.15, 279768.63, 280884.93, 267585.7, 255219.55, 247274.14, 240461.33, 240507.84, 237952.52, 236964.07, 233122.92, 232754.14, 234950.56, 234421.85, 235559.08, 233647.05, 232296.24, 229394.3, 229335.52, 229431.87, 228529.98, 225719.94, 223006.87, 220759.24, 223025.52, 221401.75, 220883.32, 217922.04, 221307.41, 223208.67, 224984.26, 226430.11, 227320.24, 228120.81, 228097.65, 232365.24, 241528.27, 249808.59, 256509.02, 260980.61, 261444.99, 263190.07, 265083.09, 269507.0, 267661.16, 269083.28, 271492.33, 275872.19, 282602.61, 286330.36, 292986.6, 296491.74, 301025.58, 308061.66, 315334.48, 323166.74, 328596.92, 336541.78, 340890.65, 346789.22, 356423.92, 366350.45, 377477.1, 380935.71, 384479.2, 385221.42, 385335.21, 385848.8, 379085.14, 381048.63, 382526.83, 390632.82, 398610.76, 406832.88, 419704.25, 424837.36, 428261.58, 431837.64, 444112.12, 464956.57, 474915.88, 491912.38, 504276.43, 527851.88, 551571.95, 575125.2, 592526.33, 613277.14, 631060.1, 647207.36, 656195.99, 659834.12, 670238.17, 678782.63, 677680.07, 680689.68, 684171.62, 698244.92, 694642.51, 681615.87, 684244.03, 676447.18, 672969.35, 661345.85, 657496.69, 651827.93, 662153.48, 663134.4, 665626.13, 671892.54, 674115.8, 675367.19, 668663.66, 659474.8, 656378.58, 647738.92, 638356.22, 623956.2, 627395.37, 627816.07, 626085.32, 630625.06, 631167.33, 629111.28, 619700.4, 609887.26, 594458.94, 580200.48, 574199.26, 557632.76, 551881.89, 549356.56, 543638.29, 540295.35, 533733.34, 530948.1, 530661.33, 527126.79, 514783.65, 506781.67, 495854.81, 480746.48, 463802.49, 459115.42, 452074.86, 447381.11, 437137.39, 432366.04, 427502.99, 426227.23, 421684.43, 417802.95, 421760.09, 421032.25, 419549.75, 422913.46, 421265.34, 415779.41, 416901.07, 417981.94, 416932.65, 415310.97, 421240.7, 422178.29, 426819.25, 430319.52, 444410.01, 460073.4, 468482.49, 477409.58, 490776.38, 509152.53, 523012.11, 546359.66, 560537.58, 577193.56, 590845.9, 605865.08, 616719.57, 629574.27, 647036.37, 667610.22, 680352.27, 697692.29, 720731.33, 736034.99, 740802.15, 737862.76, 736418.79, 732407.67, 724256.22, 710396.38, 692860.61, 669965.33, 660786.09, 644148.81, 637695.56, 633942.71, 630668.64, 625097.92, 624951.13, 625192.45, 619875.21, 606926.69, 585418.74, 581181.57, 572765.94, 568412.82, 565217.17, 566710.79, 571362.75, 574149.97, 577841.68, 583562.77, 589812.23, 600754.29, 600957.54, 598633.76, 592197.69, 585282.52, 569879.9, 554024.84]}, "000852_SH": {"name": "中证1000", "curr_date": "2026-03-31", "curr_price": 7619.85, "pct_5d": 0.25, "pct_20d": -6.42, "pct_60d": 0.53, "pct_ytd": -1.73, "from_52w_high": -10.99, "from_52w_low": 38.63, "ma25": 8065.38, "ma55": 8146.59, "ma100": 7816.47, "ma250": 7104.14, "ma850": 6309.3, "dist_ma25": -5.52, "dist_ma100": -2.52, "dist_ma250": 7.26, "dist_ma850": 20.77, "l1_signal": "牛", "l2_signal": "上升趋势", "l3_above_lifeline": false, "l4_above_mainforce": false, "l4_ma25_slope": "下行", "ma_aligned_bull": false, "ma_aligned_bear": false, "atr_pct": 2.61, "vol_ratio": 0.85, "vol_extreme": false, "div_point_a": 7067.7, "div_point_a_date": "2025-11-21", "angle_60d": -0.01, "chart_dates": ["2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-18", "2025-04-21", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31"], "chart_close": [6535.06, 6405.61, 6360.34, 6310.76, 6334.91, 6328.77, 6268.32, 6226.65, 6259.48, 6277.25, 6203.26, 5496.44, 5530.02, 5652.33, 5784.59, 5862.19, 5938.53, 5914.03, 5835.35, 5839.56, 5831.69, 5952.64, 5949.31, 5984.58, 5920.48, 5939.5, 5877.06, 5903.38, 5950.12, 6102.92, 6111.49, 6158.08, 6082.08, 6167.46, 6151.01, 6160.37, 6057.04, 6068.12, 6095.34, 6146.02, 6132.18, 6066.1, 5989.68, 6028.79, 6008.46, 5984.46, 6089.58, 6026.56, 6070.04, 6123.17, 6167.01, 6152.84, 6218.96, 6161.69, 6186.51, 6192.22, 6106.01, 6147.46, 6141.47, 6135.39, 6048.22, 5999.59, 6078.22, 6194.67, 6276.16, 6247.79, 6276.94, 6356.18, 6373.77, 6309.48, 6342.64, 6312.2, 6327.14, 6407.7, 6390.47, 6406.57, 6461.1, 6462.31, 6442.83, 6462.06, 6535.67, 6552.07, 6612.26, 6637.1, 6607.22, 6701.12, 6706.61, 6729.98, 6773.88, 6718.48, 6661.19, 6670.47, 6739.69, 6787.48, 6861.31, 6862.15, 6838.13, 6943.94, 6963.61, 7064.33, 6976.49, 7117.5, 7237.6, 7242.85, 7305.46, 7253.34, 7362.94, 7477.73, 7476.47, 7336.5, 7447.11, 7438.68, 7501.15, 7313.88, 7206.88, 7041.15, 7245.67, 7311.03, 7226.03, 7230.17, 7399.89, 7422.88, 7415.57, 7483.63, 7554.81, 7476.4, 7438.19, 7489.48, 7408.07, 7534.22, 7506.51, 7397.59, 7497.83, 7574.96, 7648.05, 7533.82, 7519.76, 7373.15, 7483.45, 7401.84, 7185.48, 7239.18, 7344.05, 7312.21, 7308.1, 7419.24, 7495.38, 7479.22, 7569.12, 7485.08, 7506.67, 7538.12, 7435.73, 7464.86, 7551.83, 7541.88, 7563.25, 7540.79, 7486.38, 7590.58, 7502.76, 7523.08, 7448.1, 7387.21, 7340.41, 7067.7, 7156.41, 7249.95, 7248.45, 7257.45, 7334.21, 7386.68, 7313.18, 7248.27, 7248.66, 7342.49, 7423.05, 7380.58, 7408.24, 7312.0, 7370.94, 7309.08, 7181.62, 7288.74, 7272.4, 7329.81, 7408.35, 7392.42, 7506.38, 7579.38, 7605.53, 7594.16, 7597.3, 7595.28, 7753.88, 7864.9, 7906.42, 7971.59, 8129.18, 8357.01, 8203.13, 8257.17, 8240.78, 8232.73, 8265.65, 8182.75, 8247.68, 8309.35, 8470.74, 8365.43, 8382.15, 8399.79, 8332.21, 8254.86, 7975.43, 8209.1, 8207.12, 8068.08, 8051.57, 8233.78, 8250.3, 8239.51, 8314.83, 8204.83, 8299.77, 8426.33, 8490.62, 8560.84, 8476.97, 8142.45, 8094.52, 8171.12, 8248.86, 8203.87, 8350.09, 8363.53, 8335.91, 8214.29, 8211.35, 8019.86, 8096.59, 7909.23, 7783.43, 7409.11, 7600.86, 7751.18, 7639.38, 7746.31, 7767.93, 7619.85], "chart_ma25": [6439.59, 6445.86, 6449.01, 6455.76, 6457.61, 6457.39, 6450.15, 6440.65, 6433.62, 6423.73, 6411.88, 6380.92, 6351.17, 6322.96, 6298.42, 6271.5, 6248.74, 6224.46, 6195.8, 6166.71, 6141.3, 6116.56, 6090.95, 6065.85, 6040.09, 6016.26, 5995.12, 5976.84, 5962.42, 5953.14, 5944.45, 5940.04, 5934.25, 5930.57, 5925.52, 5923.81, 5946.23, 5967.76, 5985.48, 5999.93, 6010.73, 6015.84, 6018.86, 6026.6, 6033.36, 6039.47, 6044.94, 6048.03, 6051.45, 6059.56, 6068.66, 6079.69, 6092.32, 6100.78, 6104.12, 6107.35, 6105.27, 6107.88, 6106.84, 6106.22, 6101.73, 6099.43, 6099.84, 6103.81, 6109.02, 6113.64, 6122.08, 6136.74, 6150.53, 6162.58, 6176.9, 6185.81, 6197.83, 6211.34, 6222.03, 6231.61, 6243.94, 6253.68, 6264.92, 6275.94, 6289.68, 6307.52, 6326.12, 6345.94, 6364.81, 6390.93, 6419.21, 6445.28, 6468.45, 6486.14, 6502.68, 6518.42, 6533.76, 6550.31, 6572.38, 6593.16, 6614.2, 6638.87, 6661.11, 6688.06, 6710.86, 6737.12, 6768.13, 6800.13, 6833.86, 6862.57, 6895.01, 6929.62, 6963.2, 6992.37, 7022.21, 7051.49, 7082.34, 7103.94, 7123.48, 7138.67, 7161.68, 7184.54, 7202.08, 7216.83, 7238.34, 7261.73, 7280.6, 7301.4, 7321.02, 7341.01, 7353.84, 7363.92, 7370.52, 7379.67, 7389.8, 7391.19, 7391.99, 7395.93, 7408.39, 7411.86, 7415.1, 7409.98, 7416.77, 7424.57, 7430.34, 7430.08, 7431.4, 7434.85, 7437.96, 7438.74, 7441.64, 7444.18, 7447.6, 7444.82, 7446.03, 7450.02, 7447.87, 7450.14, 7450.85, 7452.26, 7458.89, 7460.61, 7457.07, 7454.77, 7453.52, 7453.66, 7456.66, 7452.81, 7450.35, 7445.64, 7442.33, 7438.56, 7436.01, 7433.99, 7430.58, 7426.24, 7419.6, 7406.76, 7397.3, 7390.74, 7386.13, 7383.93, 7381.66, 7372.07, 7365.23, 7355.07, 7340.7, 7332.79, 7320.07, 7313.15, 7308.56, 7306.33, 7311.1, 7320.66, 7342.17, 7359.68, 7373.57, 7387.45, 7407.31, 7428.53, 7449.32, 7475.66, 7510.9, 7555.23, 7589.65, 7623.02, 7657.43, 7690.41, 7728.55, 7761.03, 7798.57, 7843.68, 7890.96, 7934.68, 7976.77, 8016.43, 8054.02, 8083.96, 8099.8, 8123.95, 8148.47, 8167.3, 8185.55, 8204.74, 8220.16, 8233.48, 8247.21, 8250.24, 8247.95, 8256.88, 8266.22, 8279.02, 8288.79, 8283.86, 8280.33, 8277.27, 8274.85, 8264.17, 8263.56, 8262.82, 8260.26, 8255.54, 8253.8, 8255.58, 8251.08, 8239.16, 8227.78, 8202.08, 8176.76, 8156.8, 8132.79, 8110.05, 8092.58, 8065.38], "chart_ma55": [6147.68, 6153.33, 6156.96, 6159.49, 6162.93, 6169.68, 6178.24, 6189.18, 6201.02, 6211.66, 6221.51, 6218.3, 6218.03, 6219.72, 6219.24, 6220.81, 6223.31, 6224.63, 6223.83, 6222.59, 6222.15, 6224.4, 6224.6, 6227.12, 6227.83, 6225.97, 6221.29, 6215.71, 6211.35, 6208.04, 6206.21, 6204.56, 6200.93, 6201.39, 6198.89, 6195.72, 6188.59, 6181.39, 6175.21, 6168.33, 6161.65, 6157.94, 6152.77, 6146.8, 6139.71, 6129.7, 6122.1, 6113.11, 6104.35, 6096.28, 6090.83, 6083.22, 6076.48, 6068.3, 6061.42, 6055.19, 6049.74, 6045.87, 6042.79, 6039.16, 6034.06, 6029.18, 6026.48, 6025.3, 6025.28, 6026.09, 6040.28, 6055.3, 6068.42, 6077.96, 6086.7, 6093.49, 6101.0, 6111.41, 6121.43, 6131.88, 6141.12, 6150.45, 6158.78, 6168.63, 6179.47, 6191.74, 6204.63, 6217.12, 6226.29, 6237.01, 6246.98, 6258.76, 6269.79, 6280.11, 6289.21, 6300.37, 6312.58, 6325.16, 6338.17, 6351.44, 6365.48, 6382.83, 6399.82, 6419.02, 6437.06, 6455.75, 6477.77, 6499.09, 6520.59, 6540.34, 6562.34, 6585.23, 6609.13, 6630.04, 6652.86, 6677.09, 6701.7, 6723.01, 6742.5, 6760.55, 6783.21, 6805.62, 6824.37, 6841.72, 6862.67, 6883.5, 6902.76, 6922.94, 6945.58, 6966.2, 6986.67, 7007.8, 7025.99, 7046.79, 7066.79, 7083.81, 7102.64, 7123.23, 7144.79, 7162.94, 7180.53, 7194.37, 7209.75, 7224.2, 7233.01, 7242.69, 7253.86, 7263.64, 7274.36, 7288.15, 7303.15, 7316.59, 7330.8, 7342.14, 7353.86, 7366.59, 7375.53, 7384.65, 7393.51, 7403.79, 7411.89, 7417.41, 7421.83, 7427.02, 7431.55, 7434.46, 7433.93, 7432.3, 7432.37, 7425.48, 7420.34, 7415.78, 7414.59, 7415.51, 7420.83, 7423.4, 7423.44, 7423.84, 7424.18, 7423.13, 7423.14, 7422.5, 7421.13, 7416.72, 7414.8, 7412.45, 7406.85, 7404.68, 7399.92, 7396.71, 7396.91, 7394.99, 7393.74, 7392.49, 7393.8, 7395.15, 7399.23, 7401.26, 7407.66, 7420.01, 7432.14, 7443.55, 7458.41, 7477.48, 7491.73, 7505.58, 7519.43, 7531.5, 7545.69, 7557.98, 7570.88, 7586.76, 7605.05, 7619.85, 7635.12, 7650.33, 7664.72, 7678.7, 7685.69, 7698.54, 7710.97, 7722.24, 7734.32, 7750.57, 7772.07, 7791.76, 7811.12, 7828.51, 7847.46, 7867.32, 7887.39, 7910.08, 7932.42, 7948.67, 7962.34, 7975.94, 7991.73, 8006.19, 8025.07, 8043.12, 8061.79, 8080.56, 8097.34, 8110.93, 8124.87, 8133.97, 8141.08, 8139.32, 8139.71, 8142.35, 8143.18, 8145.89, 8149.02, 8146.59], "chart_ma100": [6172.25, 6177.27, 6182.26, 6185.62, 6188.15, 6191.6, 6194.08, 6195.18, 6198.48, 6200.72, 6200.09, 6192.12, 6183.38, 6175.67, 6167.73, 6161.43, 6156.07, 6152.49, 6149.59, 6148.24, 6145.25, 6142.27, 6139.14, 6138.68, 6137.37, 6136.95, 6134.53, 6132.7, 6130.31, 6128.21, 6126.29, 6125.82, 6123.78, 6121.96, 6120.44, 6118.42, 6114.52, 6110.3, 6107.7, 6106.39, 6106.27, 6104.97, 6102.8, 6100.37, 6099.49, 6097.69, 6097.64, 6096.3, 6095.28, 6095.06, 6097.15, 6100.71, 6106.64, 6112.18, 6117.13, 6122.43, 6126.76, 6132.79, 6138.61, 6141.85, 6144.58, 6146.56, 6148.93, 6152.08, 6155.76, 6159.68, 6164.16, 6168.34, 6173.62, 6177.9, 6180.91, 6182.69, 6183.86, 6186.03, 6187.09, 6189.03, 6191.15, 6192.96, 6195.97, 6197.7, 6199.72, 6200.74, 6202.23, 6204.24, 6205.07, 6207.09, 6211.45, 6216.01, 6220.18, 6223.38, 6224.64, 6226.27, 6228.45, 6230.81, 6233.75, 6237.71, 6240.38, 6243.92, 6247.44, 6252.43, 6256.85, 6263.97, 6272.74, 6282.06, 6291.77, 6301.01, 6311.96, 6324.47, 6336.64, 6347.23, 6359.67, 6379.09, 6398.8, 6415.42, 6429.64, 6441.43, 6454.5, 6468.47, 6482.38, 6496.29, 6511.97, 6526.67, 6541.33, 6556.32, 6572.67, 6588.04, 6603.65, 6619.51, 6634.09, 6648.4, 6662.35, 6674.75, 6688.9, 6702.98, 6717.95, 6731.68, 6746.31, 6759.36, 6773.24, 6785.8, 6796.33, 6808.06, 6821.61, 6834.44, 6847.44, 6861.79, 6875.84, 6890.37, 6905.36, 6918.98, 6932.38, 6946.23, 6958.4, 6971.43, 6985.08, 6998.58, 7013.15, 7027.09, 7040.53, 7055.09, 7069.63, 7084.87, 7098.57, 7110.49, 7121.13, 7129.33, 7138.13, 7147.06, 7155.81, 7165.29, 7175.21, 7185.95, 7195.81, 7204.22, 7212.8, 7222.16, 7231.78, 7240.96, 7250.62, 7259.11, 7267.47, 7275.04, 7280.73, 7287.25, 7293.9, 7300.19, 7307.2, 7313.83, 7321.15, 7329.76, 7339.21, 7348.44, 7357.02, 7365.1, 7374.02, 7384.05, 7394.73, 7405.01, 7416.66, 7429.59, 7441.86, 7453.25, 7463.29, 7473.19, 7482.79, 7492.08, 7500.93, 7509.24, 7519.19, 7529.48, 7538.83, 7548.44, 7556.75, 7566.16, 7573.84, 7585.52, 7595.14, 7602.71, 7610.96, 7621.0, 7629.5, 7637.67, 7646.66, 7653.88, 7661.32, 7670.82, 7681.35, 7692.06, 7702.75, 7708.83, 7714.71, 7722.45, 7729.96, 7736.25, 7743.27, 7751.57, 7759.73, 7768.14, 7775.42, 7781.6, 7790.71, 7797.41, 7801.8, 7802.77, 7805.7, 7809.02, 7810.46, 7813.13, 7815.12, 7816.47], "chart_ma250": [5529.24, 5533.38, 5536.96, 5540.21, 5543.47, 5546.83, 5549.68, 5552.0, 5554.61, 5557.08, 5559.26, 5558.86, 5559.12, 5559.94, 5562.01, 5563.93, 5565.92, 5567.34, 5568.56, 5569.91, 5571.64, 5573.57, 5575.9, 5578.32, 5580.65, 5583.25, 5586.5, 5588.96, 5591.61, 5594.97, 5598.43, 5602.19, 5605.29, 5608.71, 5611.65, 5614.11, 5616.35, 5618.19, 5620.07, 5622.51, 5624.53, 5626.5, 5628.37, 5630.28, 5632.33, 5634.31, 5636.41, 5638.13, 5640.27, 5642.6, 5645.62, 5648.83, 5652.09, 5655.34, 5658.68, 5662.11, 5665.12, 5668.57, 5671.88, 5675.44, 5679.11, 5682.5, 5686.01, 5689.93, 5694.31, 5698.58, 5702.95, 5707.47, 5712.32, 5717.34, 5722.48, 5728.18, 5734.1, 5739.79, 5745.89, 5751.93, 5758.02, 5764.24, 5770.55, 5777.35, 5784.25, 5791.68, 5798.94, 5806.38, 5813.23, 5820.52, 5828.04, 5835.61, 5843.53, 5851.15, 5858.51, 5865.88, 5874.06, 5882.69, 5891.6, 5900.24, 5908.85, 5917.82, 5926.12, 5934.86, 5943.53, 5953.28, 5963.23, 5973.23, 5983.5, 5993.7, 6004.45, 6015.57, 6026.88, 6037.46, 6048.63, 6059.73, 6071.42, 6082.48, 6093.34, 6103.52, 6114.45, 6125.86, 6136.88, 6147.63, 6158.71, 6170.27, 6181.65, 6193.38, 6205.25, 6217.12, 6228.97, 6240.98, 6252.67, 6264.93, 6277.3, 6289.3, 6301.36, 6313.81, 6326.52, 6338.09, 6349.42, 6359.42, 6368.81, 6375.58, 6379.51, 6385.56, 6392.32, 6399.9, 6406.67, 6414.32, 6422.2, 6430.1, 6437.37, 6443.87, 6450.34, 6456.88, 6463.18, 6469.14, 6475.02, 6481.25, 6487.43, 6493.12, 6499.35, 6505.5, 6510.44, 6515.36, 6519.54, 6523.39, 6526.44, 6528.74, 6531.47, 6535.38, 6539.87, 6545.0, 6549.82, 6554.36, 6558.57, 6563.44, 6568.23, 6573.67, 6578.89, 6584.06, 6588.94, 6592.93, 6597.2, 6601.62, 6605.21, 6608.96, 6612.84, 6616.71, 6620.55, 6624.16, 6628.77, 6633.98, 6639.82, 6645.42, 6650.98, 6656.27, 6662.9, 6669.7, 6676.95, 6684.19, 6692.02, 6700.87, 6709.85, 6719.69, 6730.15, 6740.65, 6750.95, 6761.03, 6771.33, 6782.39, 6794.03, 6804.25, 6814.68, 6825.07, 6835.03, 6844.54, 6852.8, 6862.22, 6871.73, 6880.25, 6889.07, 6898.48, 6907.32, 6915.74, 6924.15, 6932.21, 6940.27, 6949.13, 6958.1, 6967.21, 6976.55, 6983.97, 6991.01, 6997.9, 7005.04, 7012.11, 7019.41, 7026.87, 7035.13, 7042.89, 7050.31, 7056.79, 7063.04, 7068.65, 7073.7, 7077.13, 7081.26, 7086.4, 7090.67, 7095.3, 7099.92, 7104.14], "chart_vol": [316002.11, 330125.31, 320142.69, 281993.86, 248639.81, 256610.2, 246785.92, 267799.43, 241767.49, 208427.53, 238273.43, 311471.17, 342259.64, 342055.47, 329964.03, 288233.39, 272673.49, 225752.07, 229430.16, 212948.45, 190723.84, 228800.25, 246793.93, 274309.98, 237867.47, 234799.47, 221937.58, 219411.78, 241759.32, 283658.44, 296522.33, 262739.57, 242809.57, 264308.29, 263462.63, 252514.24, 224907.8, 206157.49, 214012.64, 232587.24, 234419.14, 220813.67, 224806.21, 191925.54, 193605.92, 191732.66, 232575.96, 228038.84, 234296.5, 232040.0, 273238.61, 240362.54, 255785.05, 277218.15, 243671.18, 250824.4, 298969.33, 253087.83, 260873.53, 256463.61, 270827.08, 226531.99, 239995.08, 303658.28, 334997.6, 343746.33, 330455.01, 336221.16, 334302.46, 296644.0, 270492.48, 304676.92, 264834.58, 306816.86, 303195.81, 296726.32, 352065.98, 302637.45, 347377.82, 306082.81, 325983.69, 330217.28, 359907.69, 395915.31, 378330.16, 374405.61, 363139.66, 359575.85, 383703.63, 392675.09, 401821.83, 349070.97, 329554.82, 348578.38, 399056.05, 411411.19, 381544.61, 401163.37, 409922.65, 471479.35, 513604.37, 492508.5, 606867.23, 558781.04, 517521.41, 516507.41, 527766.04, 660911.47, 573343.12, 672784.13, 631711.69, 565058.63, 564568.45, 598514.46, 486667.17, 488595.04, 458842.75, 495541.35, 431928.8, 396104.75, 486236.6, 508828.45, 475104.71, 474734.48, 493296.28, 654022.74, 483203.15, 440515.48, 503959.59, 494397.62, 464745.03, 436863.3, 419534.69, 442639.61, 530500.29, 485703.73, 470990.83, 506690.16, 403797.53, 374296.52, 383875.37, 328445.22, 348158.79, 332181.33, 328574.78, 397473.07, 458169.86, 431016.07, 439161.75, 478507.16, 475588.0, 432422.77, 381678.89, 373351.69, 405168.97, 419611.06, 433797.53, 404867.23, 390482.49, 420596.45, 406292.99, 391318.35, 418065.49, 367172.56, 356711.97, 408671.9, 368993.4, 404174.11, 376963.94, 365625.94, 342185.22, 392320.3, 320218.84, 335034.48, 311315.8, 352805.66, 418474.78, 392312.85, 360245.25, 381933.82, 422779.41, 372658.89, 361621.76, 366263.79, 348983.56, 362345.4, 381186.01, 397181.53, 406286.04, 434419.26, 473665.63, 466873.47, 468024.13, 440672.07, 542230.84, 580815.08, 617917.01, 605389.12, 705322.96, 827564.72, 824652.0, 884281.08, 638659.73, 633410.68, 581675.79, 579037.02, 564720.69, 571805.72, 681947.64, 703181.53, 630208.31, 627356.67, 677736.38, 596749.3, 498940.8, 525759.55, 516215.16, 440964.67, 444590.29, 482557.3, 475050.65, 438065.44, 467860.01, 438924.35, 469515.62, 533140.59, 571186.06, 549574.09, 659006.89, 664863.75, 502701.51, 508728.53, 474128.43, 568760.66, 533511.44, 549266.93, 531966.07, 523300.35, 489125.15, 452754.33, 419893.07, 443807.16, 486114.33, 505938.4, 432416.55, 471082.96, 404052.69, 403803.69, 411973.88, 404652.13], "chart_vol_ma": [405850.9, 397178.1, 388579.55, 379461.84, 368694.29, 357756.98, 348400.82, 342348.82, 337052.44, 329495.48, 318170.17, 310582.38, 308976.14, 307766.71, 303449.9, 298630.66, 293055.8, 286665.38, 280898.18, 275567.78, 269303.87, 264237.62, 260570.18, 260185.98, 259647.37, 258556.83, 257314.41, 254895.03, 254894.62, 258656.17, 261568.61, 259132.03, 254159.53, 250272.17, 246947.1, 245161.14, 242772.86, 241793.13, 241022.25, 242004.19, 244188.96, 243789.63, 242690.24, 238571.02, 236357.94, 234204.6, 234736.52, 235167.88, 234794.73, 232213.81, 231049.63, 229930.77, 230579.55, 231225.04, 230235.47, 230150.98, 233854.05, 236200.57, 238543.61, 239737.43, 241557.83, 241843.75, 242603.19, 248189.83, 255259.41, 262860.09, 267754.05, 273163.16, 278163.46, 281393.66, 281256.35, 284472.07, 284924.55, 286404.49, 289380.72, 291675.81, 294330.65, 296808.13, 301133.34, 303614.3, 306372.13, 311556.4, 317552.03, 322164.88, 324331.51, 325864.47, 327498.7, 328666.44, 331136.5, 335938.05, 342504.52, 344724.22, 347960.23, 350048.31, 354841.32, 360575.56, 362049.49, 366975.79, 370103.03, 378372.86, 387753.89, 395868.45, 408216.43, 416359.72, 423319.28, 430424.37, 438655.69, 453722.47, 463204.44, 477209.9, 488704.39, 499503.77, 511254.45, 523751.26, 528131.81, 531991.01, 535855.91, 540574.81, 541675.12, 537906.39, 536538.0, 537354.0, 530765.87, 526563.55, 525352.29, 532228.06, 529999.91, 518980.11, 515510.94, 506591.61, 498243.28, 491833.51, 484581.82, 476788.08, 478979.74, 478835.17, 479442.57, 480000.01, 478593.45, 477503.04, 472384.98, 463365.82, 457018.52, 449890.86, 441654.79, 428827.3, 427575.64, 427100.67, 423860.78, 423066.25, 423608.4, 423386.38, 421493.59, 418029.19, 411762.62, 408457.99, 406598.33, 401507.18, 400841.43, 403156.42, 404277.3, 407420.96, 410916.3, 412665.86, 414072.72, 414632.66, 410173.84, 408831.74, 405721.85, 400077.79, 393407.65, 391402.52, 388329.52, 386413.66, 381721.0, 378380.73, 377614.6, 376986.88, 375475.01, 373541.88, 374366.2, 373433.23, 370611.04, 370565.61, 370179.18, 367862.86, 368472.49, 368122.86, 369588.97, 373028.63, 379602.65, 383330.31, 390720.58, 396002.46, 407548.21, 418948.68, 428920.79, 439574.6, 456828.49, 479110.03, 499203.66, 524784.77, 538636.67, 551994.02, 563628.63, 574463.21, 583639.94, 592371.15, 606154.23, 619592.35, 627419.48, 635443.64, 645929.25, 653733.11, 651568.61, 648815.84, 643730.74, 635509.52, 622472.89, 605222.52, 587742.45, 565431.67, 556891.68, 547167.36, 541559.36, 539264.53, 539587.8, 538476.22, 537329.18, 535413.29, 529037.95, 523106.55, 512926.15, 511526.72, 513255.25, 514430.62, 515218.16, 519334.95, 521561.69, 520071.54, 517313.66, 517600.75, 518513.47, 521864.17, 520009.21, 516906.33, 508549.66, 501261.14, 488909.49, 475898.91]}, "000905_SH": {"name": "中证500", "curr_date": "2026-03-31", "curr_price": 7617.33, "pct_5d": 0.26, "pct_20d": -8.02, "pct_60d": 2.79, "pct_ytd": -0.44, "from_52w_high": -12.02, "from_52w_low": 44.08, "ma25": 8111.41, "ma55": 8197.74, "ma100": 7744.99, "ma250": 6862.8, "ma850": 6017.6, "dist_ma25": -6.09, "dist_ma100": -1.65, "dist_ma250": 10.99, "dist_ma850": 26.58, "l1_signal": "牛", "l2_signal": "上升趋势", "l3_above_lifeline": false, "l4_above_mainforce": false, "l4_ma25_slope": "下行", "ma_aligned_bull": false, "ma_aligned_bear": false, "atr_pct": 2.6, "vol_ratio": 0.88, "vol_extreme": false, "div_point_a": 6817.41, "div_point_a_date": "2025-11-21", "angle_60d": 0.0, "chart_dates": ["2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-18", "2025-04-21", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31"], "chart_close": [6059.49, 5971.93, 5969.08, 5946.95, 5948.5, 5957.6, 5916.03, 5857.77, 5892.85, 5899.09, 5845.5, 5287.03, 5326.91, 5439.77, 5544.06, 5581.32, 5627.14, 5602.53, 5556.86, 5557.01, 5560.72, 5642.38, 5624.21, 5634.95, 5605.88, 5627.18, 5598.3, 5604.91, 5631.82, 5740.33, 5750.29, 5773.81, 5721.72, 5793.67, 5781.67, 5799.12, 5715.3, 5715.85, 5720.79, 5747.37, 5757.92, 5703.28, 5653.04, 5669.46, 5652.15, 5637.24, 5719.91, 5671.07, 5694.84, 5739.01, 5769.97, 5762.08, 5805.65, 5757.99, 5792.95, 5799.93, 5740.24, 5767.81, 5750.91, 5745.87, 5676.83, 5639.51, 5674.17, 5765.84, 5862.55, 5838.25, 5863.73, 5915.39, 5934.67, 5892.95, 5922.66, 5911.44, 5900.41, 5977.74, 5953.49, 5983.05, 6027.08, 6020.86, 6018.76, 6017.19, 6082.46, 6099.61, 6161.31, 6213.41, 6196.76, 6293.6, 6299.59, 6323.42, 6356.13, 6314.69, 6226.34, 6213.2, 6261.73, 6303.24, 6357.38, 6337.54, 6323.5, 6391.76, 6418.16, 6508.1, 6429.85, 6568.57, 6668.17, 6655.31, 6728.07, 6704.17, 6822.85, 6951.9, 6964.07, 6862.56, 7011.16, 7043.94, 7110.29, 6961.69, 6868.46, 6698.45, 6913.95, 6992.12, 6928.97, 6932.11, 7122.71, 7147.75, 7137.36, 7190.99, 7260.04, 7199.88, 7170.35, 7225.13, 7180.71, 7323.71, 7341.32, 7240.91, 7350.56, 7412.37, 7548.92, 7398.22, 7376.56, 7194.85, 7294.0, 7231.53, 7016.07, 7069.64, 7185.62, 7128.48, 7142.95, 7258.53, 7379.39, 7341.03, 7480.97, 7385.71, 7331.0, 7333.6, 7210.83, 7229.34, 7345.72, 7327.91, 7343.8, 7291.61, 7243.25, 7355.29, 7235.46, 7235.35, 7151.02, 7122.75, 7061.95, 6817.41, 6868.97, 6954.6, 6965.05, 6951.28, 7031.55, 7101.83, 7040.3, 6996.36, 7012.81, 7097.84, 7172.37, 7121.33, 7155.99, 7082.89, 7169.79, 7113.96, 7001.32, 7137.83, 7100.84, 7169.55, 7255.66, 7256.79, 7352.04, 7410.71, 7458.84, 7430.61, 7458.94, 7465.57, 7651.2, 7814.14, 7875.08, 7894.54, 8056.69, 8249.13, 8143.28, 8227.7, 8223.27, 8232.67, 8287.95, 8247.8, 8340.11, 8387.6, 8590.17, 8506.69, 8548.93, 8601.16, 8517.84, 8370.52, 8037.05, 8286.7, 8299.06, 8146.11, 8146.41, 8311.28, 8306.44, 8325.81, 8423.57, 8299.59, 8392.91, 8527.56, 8557.22, 8658.45, 8658.33, 8281.61, 8248.95, 8309.17, 8360.33, 8279.48, 8410.3, 8403.33, 8359.47, 8239.8, 8185.15, 8016.03, 8096.43, 7877.09, 7760.04, 7440.75, 7597.37, 7767.67, 7642.13, 7737.61, 7753.72, 7617.33], "chart_ma25": [6003.69, 6004.65, 6005.47, 6009.72, 6009.9, 6009.9, 6004.26, 5996.77, 5993.29, 5987.18, 5979.84, 5956.93, 5934.58, 5914.66, 5898.4, 5879.74, 5864.27, 5847.83, 5828.3, 5808.97, 5791.64, 5773.33, 5753.98, 5734.04, 5714.22, 5696.93, 5681.98, 5667.42, 5654.81, 5646.49, 5638.19, 5632.5, 5627.06, 5623.1, 5618.4, 5616.54, 5633.67, 5649.23, 5660.47, 5668.61, 5675.67, 5678.71, 5680.74, 5685.24, 5689.04, 5692.11, 5695.21, 5697.08, 5699.48, 5704.8, 5710.51, 5717.06, 5725.09, 5730.14, 5732.25, 5734.23, 5732.89, 5734.73, 5733.02, 5731.59, 5726.7, 5723.67, 5722.0, 5723.8, 5728.41, 5731.62, 5738.04, 5748.53, 5759.14, 5768.77, 5780.19, 5787.85, 5797.03, 5808.34, 5816.92, 5825.44, 5836.04, 5844.65, 5855.08, 5864.05, 5875.35, 5889.73, 5905.47, 5923.97, 5942.0, 5966.68, 5993.08, 6019.05, 6042.66, 6060.75, 6076.27, 6090.25, 6104.1, 6118.84, 6137.42, 6154.02, 6170.5, 6190.15, 6207.77, 6229.95, 6247.83, 6269.49, 6295.38, 6320.84, 6349.28, 6374.14, 6403.07, 6434.7, 6464.72, 6491.36, 6520.06, 6549.83, 6581.31, 6605.53, 6627.68, 6646.56, 6674.59, 6703.81, 6728.84, 6751.83, 6783.24, 6816.21, 6846.03, 6876.94, 6907.02, 6937.82, 6961.89, 6984.17, 7005.19, 7029.01, 7054.5, 7071.22, 7087.17, 7105.1, 7132.55, 7148.04, 7161.34, 7164.72, 7178.02, 7192.54, 7205.24, 7211.47, 7219.21, 7227.19, 7235.63, 7241.06, 7250.32, 7258.47, 7270.07, 7275.1, 7280.34, 7286.87, 7286.3, 7288.24, 7289.12, 7288.59, 7292.7, 7290.35, 7283.58, 7275.84, 7269.33, 7263.68, 7261.92, 7255.07, 7248.29, 7240.34, 7232.32, 7223.08, 7216.54, 7208.87, 7199.79, 7188.69, 7176.66, 7157.28, 7142.36, 7133.04, 7126.59, 7123.01, 7120.07, 7109.56, 7103.23, 7094.04, 7082.43, 7078.21, 7068.03, 7065.4, 7066.21, 7070.44, 7079.61, 7093.56, 7119.22, 7141.69, 7161.86, 7181.88, 7209.88, 7241.18, 7272.11, 7306.28, 7348.69, 7398.15, 7439.96, 7482.18, 7526.25, 7569.32, 7617.52, 7660.64, 7709.69, 7765.14, 7823.24, 7879.47, 7934.64, 7988.46, 8038.91, 8079.65, 8104.7, 8137.81, 8172.55, 8200.04, 8227.27, 8253.68, 8273.37, 8291.4, 8312.56, 8322.27, 8328.02, 8343.4, 8356.58, 8373.98, 8391.01, 8390.76, 8390.8, 8389.57, 8388.47, 8376.05, 8372.19, 8366.37, 8356.7, 8345.58, 8338.16, 8337.32, 8329.71, 8312.83, 8297.39, 8269.16, 8240.61, 8219.06, 8191.71, 8164.27, 8142.44, 8111.41], "chart_ma55": [5810.66, 5813.05, 5814.54, 5815.41, 5816.32, 5820.53, 5827.26, 5835.08, 5843.55, 5851.08, 5858.06, 5854.98, 5854.21, 5855.27, 5854.75, 5855.82, 5857.3, 5857.58, 5856.54, 5855.14, 5854.3, 5855.35, 5854.88, 5855.71, 5855.56, 5853.36, 5849.08, 5843.92, 5839.8, 5836.16, 5833.47, 5830.31, 5826.18, 5825.33, 5822.38, 5819.5, 5813.28, 5807.3, 5802.59, 5797.05, 5792.13, 5789.28, 5785.05, 5780.17, 5774.74, 5767.28, 5761.94, 5755.71, 5749.34, 5743.86, 5739.79, 5733.64, 5728.15, 5721.32, 5715.71, 5710.99, 5706.78, 5703.12, 5699.56, 5695.87, 5690.77, 5685.74, 5682.4, 5680.09, 5679.43, 5679.3, 5689.78, 5700.48, 5709.48, 5715.82, 5722.03, 5727.2, 5732.62, 5740.27, 5747.48, 5755.16, 5762.15, 5769.36, 5776.34, 5783.82, 5792.1, 5801.21, 5811.33, 5821.9, 5830.2, 5840.08, 5849.64, 5860.58, 5870.81, 5880.5, 5888.26, 5897.32, 5907.24, 5917.83, 5928.92, 5939.46, 5950.74, 5964.17, 5977.78, 5993.34, 6007.76, 6023.19, 6041.32, 6058.78, 6076.76, 6093.75, 6113.03, 6133.87, 6155.8, 6175.25, 6197.27, 6220.98, 6245.39, 6267.4, 6287.81, 6306.39, 6329.56, 6353.52, 6374.67, 6394.11, 6417.47, 6440.81, 6463.03, 6485.87, 6510.73, 6533.95, 6556.84, 6580.93, 6602.8, 6627.71, 6652.41, 6674.48, 6698.65, 6723.99, 6751.84, 6775.76, 6798.98, 6817.77, 6837.42, 6856.23, 6869.37, 6883.37, 6899.05, 6913.09, 6928.15, 6946.92, 6968.12, 6987.74, 7009.16, 7027.85, 7045.92, 7064.28, 7079.17, 7093.92, 7109.15, 7125.48, 7139.58, 7150.91, 7161.6, 7173.01, 7182.67, 7190.17, 7193.79, 7196.67, 7200.3, 7196.77, 7193.59, 7190.76, 7190.82, 7192.33, 7198.38, 7201.8, 7202.68, 7203.9, 7205.37, 7204.92, 7205.36, 7205.07, 7204.44, 7201.22, 7200.67, 7199.64, 7195.57, 7194.79, 7190.74, 7187.62, 7187.89, 7186.18, 7185.09, 7182.57, 7183.67, 7184.66, 7189.46, 7192.58, 7200.21, 7214.72, 7229.36, 7242.25, 7259.13, 7279.24, 7295.33, 7310.75, 7326.79, 7340.46, 7356.86, 7373.53, 7391.83, 7413.23, 7437.97, 7459.08, 7481.28, 7504.14, 7526.44, 7546.93, 7559.33, 7578.44, 7597.78, 7615.87, 7634.49, 7657.2, 7684.28, 7710.76, 7737.47, 7761.74, 7787.95, 7815.15, 7841.61, 7871.03, 7901.25, 7924.32, 7945.25, 7965.92, 7988.44, 8008.87, 8033.0, 8055.43, 8078.08, 8100.6, 8119.64, 8136.28, 8153.13, 8164.43, 8173.58, 8175.19, 8178.59, 8184.2, 8188.05, 8193.11, 8198.35, 8197.74], "chart_ma100": [5868.84, 5870.79, 5873.22, 5874.59, 5875.24, 5876.69, 5877.47, 5877.03, 5877.64, 5877.35, 5874.68, 5866.29, 5857.17, 5849.34, 5841.48, 5834.65, 5828.32, 5823.56, 5819.89, 5817.13, 5813.37, 5809.87, 5806.26, 5805.11, 5803.81, 5803.17, 5801.11, 5799.58, 5797.38, 5795.35, 5793.53, 5792.47, 5790.67, 5788.82, 5787.16, 5785.23, 5781.91, 5778.07, 5775.39, 5773.74, 5772.84, 5770.99, 5768.5, 5766.02, 5764.36, 5761.78, 5760.57, 5758.41, 5756.37, 5754.77, 5755.21, 5757.38, 5761.15, 5764.46, 5767.55, 5770.93, 5773.77, 5777.75, 5781.44, 5783.18, 5784.72, 5785.66, 5786.53, 5788.04, 5790.33, 5792.64, 5795.44, 5798.09, 5801.55, 5804.33, 5806.08, 5806.85, 5806.97, 5808.17, 5808.3, 5809.14, 5809.94, 5810.66, 5812.44, 5813.17, 5814.42, 5814.85, 5816.01, 5818.34, 5819.79, 5822.44, 5826.84, 5831.21, 5835.4, 5839.04, 5840.82, 5842.82, 5845.3, 5847.88, 5851.05, 5854.49, 5856.72, 5859.56, 5862.41, 5866.48, 5870.18, 5876.15, 5883.14, 5890.22, 5898.02, 5905.48, 5914.55, 5925.49, 5936.2, 5945.84, 5957.49, 5975.06, 5992.9, 6008.12, 6021.36, 6032.53, 6045.4, 6059.3, 6073.02, 6086.77, 6102.39, 6117.44, 6132.57, 6148.13, 6164.67, 6180.4, 6196.12, 6212.32, 6227.81, 6243.65, 6259.56, 6274.23, 6290.52, 6306.7, 6324.38, 6340.37, 6356.98, 6371.77, 6387.5, 6402.34, 6414.93, 6428.59, 6443.91, 6458.5, 6473.41, 6489.63, 6506.22, 6522.92, 6540.78, 6557.25, 6572.86, 6588.57, 6602.63, 6617.34, 6632.87, 6648.15, 6664.18, 6679.42, 6694.34, 6710.44, 6726.02, 6741.98, 6756.75, 6770.32, 6782.31, 6792.11, 6802.16, 6812.55, 6822.85, 6833.44, 6844.53, 6856.43, 6867.83, 6878.02, 6888.61, 6899.76, 6911.21, 6922.21, 6933.59, 6944.24, 6955.12, 6965.26, 6973.66, 6982.9, 6991.94, 7000.7, 7010.27, 7019.6, 7029.56, 7040.52, 7052.84, 7065.02, 7076.99, 7088.61, 7101.55, 7116.32, 7131.83, 7146.86, 7163.25, 7180.66, 7197.79, 7214.38, 7229.93, 7245.71, 7261.31, 7276.74, 7291.91, 7306.27, 7322.53, 7338.97, 7354.35, 7369.92, 7384.0, 7398.09, 7409.77, 7425.66, 7439.51, 7451.05, 7463.22, 7477.01, 7488.85, 7500.63, 7513.49, 7524.58, 7535.91, 7549.18, 7563.05, 7577.39, 7592.16, 7601.74, 7610.82, 7621.5, 7631.6, 7640.27, 7648.88, 7658.93, 7668.76, 7679.21, 7688.12, 7695.97, 7706.77, 7714.85, 7720.59, 7723.71, 7728.26, 7733.35, 7735.98, 7739.94, 7742.67, 7744.99], "chart_ma250": [5401.99, 5404.47, 5406.59, 5408.68, 5410.81, 5413.07, 5414.92, 5416.24, 5417.9, 5419.52, 5421.04, 5420.65, 5420.77, 5421.4, 5422.95, 5424.38, 5425.74, 5426.55, 5427.25, 5427.98, 5429.03, 5430.22, 5431.62, 5432.95, 5434.27, 5435.42, 5437.04, 5438.1, 5439.23, 5440.93, 5442.86, 5445.13, 5446.96, 5449.1, 5450.74, 5452.02, 5453.12, 5453.86, 5454.64, 5455.79, 5456.6, 5457.27, 5457.86, 5458.54, 5459.36, 5460.21, 5461.12, 5461.71, 5462.57, 5463.66, 5465.29, 5467.08, 5468.82, 5470.59, 5472.44, 5474.41, 5476.14, 5478.11, 5479.75, 5481.62, 5483.41, 5485.13, 5486.96, 5489.09, 5491.76, 5494.26, 5496.89, 5499.63, 5502.69, 5505.88, 5509.17, 5512.84, 5516.65, 5520.48, 5524.58, 5528.74, 5532.84, 5537.12, 5541.55, 5546.28, 5551.15, 5556.41, 5561.55, 5567.03, 5572.05, 5577.55, 5583.21, 5588.91, 5594.91, 5600.66, 5606.08, 5611.47, 5617.62, 5624.16, 5630.93, 5637.34, 5643.79, 5650.56, 5656.69, 5663.31, 5669.88, 5677.38, 5685.04, 5692.66, 5700.55, 5708.48, 5716.92, 5725.8, 5734.99, 5743.64, 5753.01, 5762.45, 5772.48, 5781.98, 5791.32, 5799.97, 5809.45, 5819.43, 5829.15, 5838.65, 5848.58, 5858.98, 5869.15, 5879.58, 5890.22, 5900.87, 5911.52, 5922.39, 5933.05, 5944.36, 5955.92, 5967.04, 5978.36, 5990.01, 6002.23, 6013.06, 6023.64, 6032.67, 6041.04, 6046.99, 6050.43, 6055.77, 6061.75, 6068.38, 6074.52, 6081.66, 6089.34, 6097.02, 6104.39, 6111.11, 6117.42, 6123.65, 6129.59, 6135.27, 6141.12, 6147.18, 6153.2, 6158.76, 6164.41, 6170.11, 6174.61, 6179.04, 6182.69, 6186.29, 6189.22, 6191.43, 6193.87, 6197.37, 6201.54, 6206.01, 6210.39, 6214.83, 6219.05, 6224.03, 6229.14, 6234.77, 6240.24, 6245.69, 6250.91, 6255.47, 6260.42, 6265.36, 6269.75, 6274.39, 6279.0, 6283.71, 6288.55, 6293.17, 6298.63, 6304.62, 6311.06, 6317.23, 6323.46, 6329.65, 6336.98, 6344.66, 6352.8, 6360.83, 6369.46, 6378.86, 6388.53, 6399.26, 6410.44, 6421.66, 6432.87, 6444.02, 6455.55, 6467.63, 6480.46, 6492.2, 6504.3, 6516.52, 6528.25, 6539.27, 6548.88, 6559.6, 6570.46, 6580.45, 6590.67, 6601.46, 6611.7, 6621.66, 6631.8, 6641.57, 6651.38, 6661.9, 6672.33, 6683.17, 6694.44, 6703.79, 6712.96, 6721.97, 6731.23, 6740.43, 6749.86, 6759.36, 6769.36, 6778.77, 6787.76, 6796.03, 6804.22, 6811.67, 6818.66, 6824.24, 6830.47, 6837.56, 6843.73, 6850.25, 6856.73, 6862.8], "chart_vol": [203849.59, 225801.0, 220094.33, 192227.01, 171695.84, 176590.48, 168899.48, 189563.39, 179327.95, 140642.08, 173662.14, 267397.4, 261875.35, 288257.44, 268666.43, 227659.79, 207470.47, 161900.88, 163751.04, 148283.24, 139804.15, 160264.81, 164464.32, 177991.29, 157899.19, 171933.82, 167616.29, 158033.0, 181616.58, 217059.98, 227566.2, 187032.63, 178162.28, 199426.83, 194252.27, 188145.13, 165136.69, 141882.12, 141098.69, 151751.19, 155147.38, 141620.88, 148123.6, 127343.6, 125275.69, 119959.83, 148095.09, 137670.58, 159996.84, 150314.94, 174970.1, 148022.37, 171482.41, 182980.3, 161353.67, 165393.54, 216010.35, 170989.18, 160121.67, 154540.14, 162657.97, 135042.6, 146034.99, 191935.45, 239260.45, 235223.72, 243302.99, 226516.69, 213595.66, 194981.07, 174689.07, 211373.14, 165759.1, 216966.44, 207864.44, 207636.64, 263484.52, 226290.85, 246076.76, 213065.13, 235042.94, 236482.71, 272008.06, 313661.67, 311060.24, 320187.94, 304368.07, 305210.1, 292526.92, 304778.47, 322273.64, 254479.55, 236649.25, 235654.71, 263770.94, 274900.59, 259175.3, 277034.09, 290495.35, 353506.82, 367959.84, 381378.6, 491491.24, 444629.21, 409671.38, 404122.61, 446681.19, 574922.7, 490812.22, 583863.94, 563651.75, 523041.43, 536161.18, 541493.73, 449579.91, 471991.42, 431958.52, 455360.58, 394761.61, 359667.34, 469498.3, 499359.87, 441828.73, 435210.19, 445549.24, 604238.74, 450654.12, 421916.0, 495068.97, 477262.27, 493046.79, 430197.6, 433864.49, 444956.37, 535756.81, 502127.44, 473285.53, 505838.52, 397458.97, 359837.53, 348113.89, 314675.08, 344991.29, 286200.27, 286304.41, 366061.82, 471762.07, 422068.63, 443141.38, 473832.27, 434918.18, 390397.1, 326392.39, 311844.65, 352809.57, 336398.94, 371310.64, 338597.66, 313840.34, 339596.06, 310485.06, 310823.16, 306540.02, 256755.09, 254158.17, 310968.72, 270213.25, 289204.91, 274858.34, 253013.15, 243255.19, 308533.69, 247360.27, 251308.65, 239912.56, 275108.4, 347244.59, 305522.3, 280495.26, 300744.58, 373144.94, 301023.64, 284968.7, 302410.12, 275510.78, 292738.02, 327207.67, 328559.03, 331930.93, 336366.99, 386914.29, 390446.09, 407623.52, 380369.64, 504690.49, 571675.1, 582740.69, 564453.37, 631145.88, 685824.12, 735218.8, 815959.27, 600802.13, 616185.54, 560926.08, 588171.48, 517592.18, 546138.13, 639421.45, 692104.52, 610885.92, 612731.52, 666256.87, 600497.37, 546055.66, 543264.49, 501886.75, 435277.7, 418373.43, 427982.32, 394283.31, 388612.43, 438320.45, 406320.46, 449713.84, 506848.67, 513984.66, 512821.94, 619505.36, 634660.48, 471470.15, 472940.76, 427695.13, 523828.53, 465082.28, 495752.48, 478413.66, 482367.29, 460796.9, 406247.34, 391242.65, 394855.04, 417113.69, 451938.51, 388538.16, 423378.16, 355916.68, 344204.68, 361442.21, 376502.13], "chart_vol_ma": [282423.21, 273865.22, 265751.81, 258347.34, 250568.86, 242985.65, 236516.09, 232646.48, 230055.61, 225000.81, 217656.78, 215970.55, 216638.64, 218791.26, 218829.26, 217531.13, 213452.75, 209039.76, 205410.2, 201880.77, 198678.49, 195401.68, 192620.18, 191908.4, 191218.57, 190985.73, 190921.57, 189345.05, 189459.49, 193280.38, 195975.58, 191957.35, 187771.69, 183330.16, 179609.45, 177633.72, 175517.03, 174516.09, 173383.48, 173556.87, 174324.03, 173391.84, 172574.8, 170042.42, 168411.24, 165812.54, 164836.48, 163818.36, 162737.38, 159400.12, 156770.32, 154819.8, 154485.81, 153663.48, 152018.55, 150880.98, 153424.66, 154880.01, 155831.16, 155970.61, 156346.14, 156017.22, 155912.79, 159142.39, 164841.62, 170604.82, 175365.21, 179807.52, 182487.46, 184720.77, 184706.71, 187874.25, 187588.09, 189287.39, 191612.93, 193725.09, 196098.8, 198863.88, 203161.63, 206087.88, 209707.13, 214779.14, 221077.79, 227164.1, 230754.09, 235002.3, 238055.56, 241990.23, 245936.79, 251426.66, 258805.89, 260961.21, 264505.72, 265440.13, 268235.46, 271598.65, 271383.19, 273920.35, 276141.28, 283163.37, 289809.21, 297054.01, 308028.17, 314576.54, 319507.1, 323703.83, 330819.49, 344305.12, 354219.39, 368173.66, 380242.56, 393670.66, 408646.25, 423938.21, 433228.65, 443083.2, 451722.36, 460638.68, 465851.99, 466160.02, 471236.94, 477136.01, 474652.88, 474181.93, 475975.82, 485981.63, 486180.28, 478529.94, 478742.78, 473412.7, 469882.45, 465240.26, 460125.42, 455298.55, 459607.4, 461114.2, 463180.55, 465704.45, 465839.31, 465847.82, 459778.6, 450544.36, 445702.49, 438252.0, 430289.75, 418380.91, 419436.31, 419443.94, 416847.56, 416676.06, 413769.63, 411779.6, 406406.0, 399750.41, 390603.05, 382316.62, 377217.88, 368855.84, 364674.91, 363662.83, 361781.39, 361588.79, 359666.23, 358193.97, 356586.66, 353832.01, 343754.56, 337111.38, 328697.23, 317656.27, 308073.12, 303979.95, 300028.34, 297001.54, 291356.69, 288292.17, 287088.86, 285435.1, 283767.84, 281825.27, 284958.26, 284468.29, 283389.72, 285672.47, 286740.1, 285828.57, 288678.29, 290645.99, 293499.62, 297667.32, 304850.27, 308945.89, 316959.05, 323412.1, 336651.0, 351479.33, 363254.14, 376200.69, 393733.22, 412987.2, 431090.89, 456837.67, 472629.35, 488318.12, 502588.88, 517360.56, 526879.78, 537758.74, 553133.26, 570920.14, 582118.72, 593232.99, 606164.66, 617171.05, 619239.3, 617818.77, 613776.08, 607317.29, 596678.67, 583786.58, 566739.81, 545372.46, 537248.38, 526755.13, 521194.51, 517128.37, 516948.0, 515282.19, 514286.38, 511414.18, 504443.39, 497453.85, 485525.77, 481692.33, 477643.66, 475268.06, 474094.4, 476448.88, 478570.05, 477483.31, 477331.27, 477643.4, 476583.07, 478863.97, 475805.18, 471631.66, 463728.26, 455297.4, 442394.24, 429486.32]}, "881001_WI": {"name": "万得全A", "curr_date": "2026-03-31", "curr_price": 6336.38, "pct_5d": -0.04, "pct_20d": -5.56, "pct_60d": -1.15, "pct_ytd": -3.08, "from_52w_high": -8.73, "from_52w_low": 36.91, "ma25": 6647.58, "ma55": 6717.41, "ma100": 6525.95, "ma250": 5937.52, "ma850": 5091.08, "dist_ma25": -4.68, "dist_ma100": -2.9, "dist_ma250": 6.72, "dist_ma850": 24.46, "l1_signal": "牛", "l2_signal": "上升趋势", "l3_above_lifeline": false, "l4_above_mainforce": false, "l4_ma25_slope": "下行", "ma_aligned_bull": false, "ma_aligned_bear": false, "atr_pct": 2.16, "vol_ratio": 0.89, "vol_extreme": false, "div_point_a": 6030.56, "div_point_a_date": "2025-11-21", "angle_60d": -0.02, "chart_dates": ["2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-18", "2025-04-21", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31"], "chart_close": [5317.4, 5228.72, 5214.73, 5195.41, 5201.75, 5202.52, 5161.01, 5117.29, 5136.2, 5139.72, 5100.43, 4628.24, 4674.54, 4755.16, 4846.75, 4880.68, 4924.75, 4919.73, 4893.49, 4899.76, 4899.63, 4955.47, 4953.1, 4970.4, 4946.08, 4956.16, 4926.04, 4935.83, 4956.08, 5046.97, 5072.31, 5106.63, 5071.11, 5136.78, 5133.11, 5168.21, 5109.12, 5107.73, 5116.52, 5150.88, 5155.14, 5122.66, 5075.37, 5082.53, 5067.43, 5057.15, 5116.5, 5074.29, 5100.58, 5136.95, 5158.55, 5156.21, 5195.23, 5159.8, 5193.24, 5199.82, 5142.43, 5170.33, 5165.08, 5165.22, 5103.13, 5087.26, 5130.67, 5210.45, 5282.72, 5267.71, 5268.17, 5314.87, 5329.05, 5307.77, 5340.14, 5332.38, 5330.87, 5388.44, 5378.66, 5398.94, 5423.46, 5432.5, 5421.53, 5424.57, 5475.47, 5499.27, 5549.68, 5583.48, 5567.82, 5627.86, 5620.73, 5640.9, 5666.31, 5643.6, 5567.1, 5559.64, 5601.67, 5645.26, 5680.05, 5679.92, 5667.68, 5723.58, 5743.06, 5801.59, 5751.93, 5834.92, 5916.34, 5913.62, 5970.7, 5962.99, 6060.82, 6170.17, 6164.69, 6057.25, 6152.99, 6175.74, 6225.51, 6133.63, 6060.71, 5938.15, 6090.92, 6133.77, 6079.0, 6092.31, 6230.17, 6220.34, 6225.92, 6255.66, 6297.68, 6229.02, 6209.37, 6241.68, 6202.6, 6289.68, 6300.64, 6224.91, 6310.06, 6348.94, 6431.96, 6326.4, 6304.08, 6203.84, 6296.21, 6268.43, 6108.41, 6156.44, 6256.23, 6232.55, 6241.4, 6320.41, 6395.73, 6373.82, 6447.75, 6379.87, 6346.63, 6371.59, 6305.9, 6327.29, 6402.89, 6386.56, 6411.01, 6378.51, 6354.02, 6438.35, 6356.5, 6347.12, 6288.11, 6269.09, 6227.95, 6030.56, 6068.12, 6143.63, 6158.76, 6158.31, 6205.68, 6264.69, 6224.37, 6179.29, 6180.02, 6250.64, 6315.48, 6280.71, 6288.29, 6219.38, 6267.06, 6227.42, 6137.11, 6231.57, 6207.88, 6257.6, 6319.09, 6315.38, 6371.69, 6409.89, 6431.54, 6413.01, 6421.08, 6410.24, 6537.94, 6641.77, 6654.1, 6659.21, 6737.75, 6853.53, 6772.59, 6793.64, 6782.52, 6770.79, 6798.66, 6758.93, 6797.35, 6827.05, 6893.11, 6846.52, 6855.84, 6863.27, 6847.28, 6783.79, 6599.89, 6739.77, 6770.14, 6695.02, 6682.47, 6808.5, 6812.67, 6802.42, 6833.88, 6756.8, 6828.58, 6899.99, 6914.39, 6942.4, 6914.72, 6709.23, 6662.93, 6734.94, 6783.03, 6726.3, 6832.57, 6850.55, 6814.38, 6750.45, 6746.76, 6641.55, 6694.62, 6552.56, 6471.92, 6207.7, 6338.8, 6452.4, 6358.26, 6424.85, 6427.84, 6336.38], "chart_ma25": [5247.01, 5249.55, 5250.43, 5253.95, 5254.57, 5254.68, 5250.26, 5244.17, 5240.55, 5234.71, 5227.47, 5207.08, 5188.27, 5171.41, 5157.24, 5141.05, 5127.53, 5113.88, 5098.39, 5083.15, 5069.74, 5054.31, 5038.51, 5022.66, 5006.52, 4992.07, 4979.96, 4968.81, 4959.23, 4953.04, 4947.83, 4945.66, 4943.81, 4943.83, 4943.57, 4946.28, 4965.52, 4982.84, 4997.3, 5009.46, 5020.44, 5028.36, 5034.58, 5042.14, 5048.85, 5055.15, 5061.59, 5066.44, 5071.65, 5079.28, 5087.38, 5096.59, 5106.96, 5115.11, 5120.96, 5126.06, 5127.49, 5131.46, 5132.59, 5133.88, 5131.28, 5130.4, 5131.32, 5135.08, 5140.35, 5144.85, 5150.67, 5160.25, 5170.11, 5179.73, 5191.05, 5199.68, 5209.95, 5221.46, 5231.13, 5240.74, 5251.43, 5260.92, 5271.39, 5280.65, 5291.67, 5305.95, 5321.12, 5337.86, 5353.96, 5374.95, 5396.29, 5416.7, 5434.93, 5449.37, 5461.34, 5473.0, 5484.47, 5497.12, 5512.01, 5525.6, 5539.02, 5554.72, 5568.91, 5585.83, 5599.95, 5616.4, 5635.76, 5655.44, 5677.29, 5696.79, 5719.25, 5744.07, 5767.32, 5786.9, 5807.9, 5830.1, 5853.49, 5872.18, 5888.86, 5903.7, 5924.96, 5946.24, 5963.59, 5980.08, 6002.09, 6024.2, 6044.29, 6064.79, 6084.64, 6103.72, 6118.7, 6131.71, 6143.27, 6156.03, 6169.54, 6176.1, 6181.7, 6189.07, 6204.05, 6210.99, 6216.12, 6215.26, 6221.76, 6230.07, 6236.88, 6239.5, 6244.4, 6250.54, 6256.5, 6260.11, 6267.13, 6273.05, 6280.73, 6284.02, 6288.72, 6295.21, 6297.78, 6302.77, 6307.3, 6310.73, 6318.18, 6320.91, 6321.12, 6321.37, 6322.58, 6324.3, 6327.67, 6326.58, 6324.97, 6321.85, 6318.32, 6313.81, 6310.86, 6307.54, 6302.95, 6297.71, 6291.73, 6280.99, 6273.0, 6269.16, 6266.91, 6265.91, 6264.35, 6257.01, 6252.23, 6244.88, 6235.23, 6230.33, 6221.11, 6217.15, 6216.03, 6217.12, 6221.23, 6228.5, 6244.54, 6258.34, 6269.44, 6279.5, 6294.68, 6312.13, 6327.7, 6345.1, 6367.43, 6394.37, 6415.25, 6434.38, 6454.45, 6473.75, 6496.92, 6516.6, 6539.39, 6566.99, 6593.45, 6619.0, 6642.93, 6664.7, 6685.97, 6702.46, 6710.06, 6722.39, 6736.67, 6747.63, 6758.52, 6769.34, 6776.18, 6782.11, 6789.1, 6789.86, 6788.86, 6793.96, 6798.79, 6805.18, 6810.94, 6807.36, 6803.52, 6801.02, 6799.26, 6792.59, 6792.03, 6791.82, 6789.87, 6785.99, 6784.51, 6786.18, 6784.37, 6775.67, 6766.74, 6747.75, 6728.97, 6714.55, 6696.79, 6680.43, 6667.27, 6647.58], "chart_ma55": [5085.96, 5088.22, 5089.67, 5090.64, 5091.83, 5095.11, 5100.04, 5106.14, 5112.85, 5118.49, 5123.54, 5120.01, 5118.91, 5119.33, 5118.32, 5118.48, 5119.12, 5119.37, 5118.61, 5117.82, 5117.84, 5118.95, 5119.03, 5120.21, 5120.81, 5119.85, 5117.04, 5113.56, 5110.82, 5108.64, 5107.53, 5106.47, 5104.26, 5104.79, 5103.82, 5103.25, 5100.3, 5097.35, 5095.35, 5092.9, 5090.6, 5090.32, 5089.06, 5087.35, 5084.92, 5080.77, 5078.11, 5074.72, 5071.44, 5068.83, 5067.44, 5064.08, 5061.3, 5057.53, 5054.69, 5052.55, 5050.99, 5050.18, 5049.63, 5048.96, 5047.16, 5045.81, 5046.06, 5047.41, 5050.01, 5053.05, 5064.68, 5076.33, 5086.76, 5095.14, 5103.5, 5110.91, 5118.38, 5127.38, 5136.09, 5145.17, 5153.68, 5162.39, 5170.6, 5179.3, 5188.74, 5199.16, 5210.32, 5221.73, 5231.2, 5241.3, 5250.65, 5261.01, 5270.63, 5279.92, 5287.17, 5295.36, 5304.34, 5313.95, 5323.58, 5333.12, 5343.03, 5354.81, 5366.82, 5380.17, 5392.8, 5405.86, 5421.17, 5435.96, 5451.12, 5465.74, 5482.19, 5499.92, 5518.19, 5533.9, 5551.23, 5570.01, 5589.2, 5606.81, 5623.09, 5638.27, 5656.52, 5674.76, 5690.55, 5705.27, 5722.77, 5740.08, 5756.65, 5773.49, 5791.49, 5807.65, 5823.6, 5840.16, 5854.96, 5871.53, 5887.92, 5902.49, 5918.45, 5935.31, 5953.63, 5969.1, 5983.73, 5995.62, 6008.58, 6021.32, 6030.06, 6039.8, 6050.99, 6061.28, 6072.15, 6085.85, 6101.05, 6115.09, 6129.68, 6142.4, 6154.53, 6167.32, 6177.91, 6188.53, 6199.47, 6211.01, 6221.48, 6229.88, 6237.89, 6246.39, 6253.55, 6258.75, 6260.9, 6262.8, 6265.9, 6263.67, 6261.72, 6260.23, 6260.68, 6262.46, 6267.32, 6270.48, 6272.13, 6273.95, 6275.55, 6275.92, 6277.65, 6278.65, 6279.24, 6277.82, 6278.51, 6278.84, 6276.93, 6277.46, 6275.97, 6275.19, 6276.9, 6277.0, 6277.41, 6277.01, 6278.92, 6280.91, 6284.85, 6286.93, 6291.83, 6301.53, 6310.57, 6317.9, 6327.09, 6338.22, 6346.44, 6353.67, 6361.1, 6366.98, 6374.59, 6382.09, 6389.83, 6399.3, 6409.59, 6417.66, 6426.19, 6434.41, 6442.94, 6450.75, 6453.69, 6460.66, 6468.35, 6475.75, 6483.26, 6493.82, 6508.04, 6521.39, 6533.94, 6544.81, 6557.0, 6569.62, 6581.43, 6594.49, 6607.86, 6617.48, 6624.98, 6632.61, 6641.74, 6649.7, 6660.85, 6671.46, 6682.13, 6693.28, 6702.65, 6710.54, 6718.48, 6722.73, 6725.57, 6722.59, 6721.3, 6721.68, 6720.68, 6720.75, 6721.07, 6717.41], "chart_ma100": [5116.41, 5118.74, 5121.32, 5123.05, 5124.25, 5126.07, 5127.54, 5128.17, 5129.76, 5130.54, 5129.43, 5123.53, 5116.77, 5111.02, 5105.41, 5100.77, 5096.42, 5093.32, 5091.05, 5089.59, 5087.33, 5085.06, 5082.69, 5082.25, 5081.53, 5081.25, 5079.74, 5078.6, 5076.94, 5075.41, 5074.1, 5073.64, 5072.55, 5071.52, 5070.64, 5069.71, 5067.89, 5065.57, 5064.44, 5064.06, 5064.4, 5064.1, 5063.27, 5062.37, 5062.16, 5061.27, 5061.39, 5060.78, 5060.37, 5060.38, 5061.74, 5064.41, 5068.54, 5072.47, 5076.1, 5079.88, 5083.08, 5087.43, 5091.76, 5094.39, 5096.7, 5098.67, 5100.92, 5103.68, 5107.07, 5110.76, 5114.5, 5118.16, 5122.4, 5126.34, 5129.66, 5132.18, 5134.21, 5137.03, 5139.14, 5141.8, 5144.38, 5146.78, 5149.92, 5152.31, 5155.06, 5157.34, 5160.14, 5163.71, 5166.53, 5169.99, 5174.82, 5179.78, 5184.68, 5189.11, 5191.92, 5194.89, 5198.3, 5201.94, 5205.94, 5210.38, 5213.65, 5217.41, 5221.17, 5225.69, 5230.03, 5236.1, 5243.11, 5250.29, 5257.98, 5265.59, 5274.59, 5285.12, 5295.4, 5304.58, 5315.1, 5330.58, 5346.09, 5359.87, 5372.01, 5382.59, 5394.25, 5406.39, 5418.24, 5430.17, 5443.47, 5456.12, 5468.85, 5481.7, 5495.22, 5507.95, 5520.78, 5533.84, 5546.3, 5558.73, 5571.01, 5582.2, 5594.59, 5606.71, 5619.7, 5631.28, 5643.23, 5654.19, 5665.99, 5677.16, 5686.69, 5697.03, 5708.84, 5720.34, 5732.08, 5744.71, 5757.51, 5770.5, 5783.97, 5796.4, 5808.28, 5820.44, 5831.54, 5843.22, 5855.31, 5867.18, 5879.87, 5891.95, 5903.84, 5916.57, 5929.1, 5941.7, 5953.28, 5963.86, 5973.32, 5980.94, 5988.94, 5997.23, 6005.53, 6014.03, 6022.69, 6032.01, 6040.95, 6048.86, 6056.87, 6065.39, 6074.31, 6082.79, 6091.46, 6099.4, 6107.32, 6114.6, 6120.48, 6126.96, 6133.36, 6139.66, 6146.64, 6153.38, 6160.44, 6168.1, 6176.74, 6185.28, 6193.47, 6201.12, 6209.7, 6219.32, 6229.18, 6238.54, 6248.49, 6259.01, 6269.21, 6278.8, 6287.46, 6296.03, 6304.31, 6312.27, 6319.64, 6326.21, 6333.49, 6341.38, 6348.41, 6355.29, 6361.51, 6368.01, 6373.4, 6381.42, 6388.21, 6393.82, 6399.85, 6407.02, 6412.84, 6418.66, 6424.74, 6429.75, 6435.06, 6441.77, 6448.82, 6455.83, 6462.95, 6467.15, 6470.77, 6475.87, 6480.6, 6484.37, 6488.38, 6493.62, 6498.72, 6504.19, 6508.69, 6512.43, 6518.29, 6522.25, 6524.41, 6524.16, 6525.13, 6526.45, 6526.08, 6526.59, 6526.39, 6525.95], "chart_ma250": [4634.69, 4637.96, 4640.9, 4643.69, 4646.55, 4649.5, 4652.14, 4654.37, 4656.78, 4659.12, 4661.32, 4661.83, 4662.78, 4664.05, 4666.06, 4667.99, 4669.95, 4671.55, 4673.12, 4674.81, 4676.74, 4678.8, 4681.09, 4683.42, 4685.78, 4688.13, 4690.88, 4693.15, 4695.49, 4698.31, 4701.31, 4704.53, 4707.43, 4710.56, 4713.39, 4716.03, 4718.55, 4720.76, 4722.96, 4725.51, 4727.85, 4730.13, 4732.33, 4734.53, 4736.82, 4739.03, 4741.28, 4743.27, 4745.49, 4747.82, 4750.53, 4753.41, 4756.29, 4759.17, 4762.16, 4765.25, 4768.12, 4771.19, 4774.15, 4777.29, 4780.39, 4783.41, 4786.62, 4790.07, 4793.9, 4797.61, 4801.35, 4805.16, 4809.14, 4813.26, 4817.51, 4822.05, 4826.68, 4831.28, 4836.06, 4840.86, 4845.63, 4850.5, 4855.42, 4860.56, 4865.87, 4871.51, 4877.1, 4882.9, 4888.31, 4893.97, 4899.68, 4905.39, 4911.28, 4917.01, 4922.37, 4927.74, 4933.66, 4939.93, 4946.36, 4952.64, 4958.92, 4965.45, 4971.58, 4978.01, 4984.44, 4991.51, 4998.78, 5006.05, 5013.55, 5021.1, 5029.1, 5037.48, 5045.96, 5053.87, 5062.19, 5070.59, 5079.37, 5087.85, 5096.16, 5103.96, 5112.32, 5121.01, 5129.5, 5137.96, 5146.7, 5155.7, 5164.61, 5173.74, 5182.97, 5192.11, 5201.32, 5210.62, 5219.8, 5229.38, 5239.13, 5248.56, 5258.14, 5267.88, 5277.93, 5286.92, 5295.61, 5303.24, 5310.4, 5315.71, 5318.97, 5323.99, 5329.39, 5335.35, 5340.86, 5347.12, 5353.72, 5360.37, 5366.61, 5372.35, 5377.82, 5383.33, 5388.72, 5393.94, 5399.23, 5404.69, 5410.28, 5415.58, 5421.08, 5426.59, 5431.17, 5435.68, 5439.44, 5443.19, 5446.47, 5449.22, 5452.05, 5455.71, 5459.86, 5464.31, 5468.63, 5472.95, 5477.09, 5481.75, 5486.4, 5491.47, 5496.42, 5501.34, 5506.01, 5510.09, 5514.34, 5518.64, 5522.47, 5526.44, 5530.38, 5534.37, 5538.48, 5542.38, 5546.95, 5551.84, 5557.08, 5562.12, 5567.17, 5572.12, 5577.92, 5583.9, 5590.1, 5596.2, 5602.58, 5609.45, 5616.45, 5624.07, 5632.07, 5640.08, 5647.96, 5655.71, 5663.61, 5671.97, 5680.62, 5688.39, 5696.33, 5704.22, 5711.99, 5719.38, 5726.01, 5733.38, 5740.88, 5747.86, 5754.97, 5762.55, 5769.77, 5776.66, 5783.48, 5790.08, 5796.73, 5803.8, 5810.79, 5817.79, 5825.02, 5831.11, 5836.96, 5842.82, 5848.87, 5854.87, 5861.06, 5867.33, 5874.04, 5880.46, 5886.74, 5892.51, 5898.14, 5903.3, 5908.15, 5911.85, 5916.09, 5920.95, 5925.02, 5929.33, 5933.58, 5937.52], "chart_vol": [1476617.37, 1579748.4, 1474431.02, 1287496.16, 1180175.66, 1216764.52, 1145017.11, 1243292.32, 1152781.56, 992702.83, 1158224.65, 1617968.46, 1653205.78, 1740999.49, 1659048.98, 1390685.08, 1312666.59, 1110222.91, 1140807.39, 1030415.7, 949173.68, 1073580.34, 1121207.48, 1262462.4, 1138919.18, 1137010.71, 1076781.76, 1041734.61, 1193093.66, 1364447.47, 1505072.31, 1321796.95, 1222385.88, 1340867.36, 1326019.64, 1349914.6, 1190419.2, 1124115.34, 1118881.57, 1211226.03, 1214372.71, 1139705.24, 1182563.71, 1033872.2, 1024122.6, 1033873.19, 1213409.81, 1164246.06, 1163829.63, 1177412.99, 1316962.32, 1177213.01, 1312655.45, 1451437.06, 1286677.17, 1303622.79, 1503996.57, 1243641.4, 1237136.33, 1221763.88, 1280889.73, 1091739.56, 1146922.42, 1448058.59, 1639505.98, 1623222.76, 1575690.67, 1517370.4, 1496531.05, 1405108.67, 1333505.86, 1454519.46, 1227066.82, 1474612.59, 1527420.22, 1515067.53, 1736609.7, 1480922.1, 1635004.51, 1461734.22, 1560274.26, 1593318.99, 1727135.08, 1928645.03, 1898370.91, 1873880.7, 1815451.23, 1766150.09, 1829309.37, 1870976.3, 1961849.01, 1619883.67, 1518202.46, 1615821.32, 1759241.73, 1852479.31, 1736302.97, 1849917.27, 1905210.43, 2175210.72, 2306282.57, 2272838.04, 2809130.23, 2640679.59, 2448414.48, 2460335.05, 2578842.28, 3176948.2, 2709831.07, 3197788.29, 3000890.23, 2830197.22, 2777646.7, 2912423.04, 2395682.26, 2581892.83, 2348359.29, 2463137.92, 2152080.37, 2003952.27, 2464592.73, 2548311.82, 2303180.07, 2367069.16, 2402923.86, 3166643.26, 2349413.16, 2142462.76, 2518471.3, 2347154.29, 2391770.73, 2166107.18, 2178142.64, 2197249.49, 2671818.09, 2534146.45, 2374221.49, 2596585.41, 2090386.72, 1948658.6, 1954407.55, 1751294.51, 1892692.7, 1690256.79, 1660708.82, 1991616.75, 2356588.54, 2165306.65, 2290674.11, 2464294.24, 2349813.49, 2132903.85, 1938394.96, 1894339.87, 2075903.92, 2020204.97, 2194371.38, 2013885.36, 1964813.02, 2065680.88, 1980381.88, 1930321.1, 1945958.6, 1742665.77, 1722634.73, 1983599.38, 1740350.18, 1826169.39, 1797190.47, 1723172.38, 1597730.79, 1889449.23, 1607266.72, 1683556.16, 1561665.47, 1738952.86, 2051611.87, 1917689.37, 1791634.16, 1885275.98, 2119009.69, 1794419.91, 1748090.89, 1834364.91, 1676800.7, 1748741.85, 1882193.94, 1921373.04, 1897241.76, 1943917.87, 2181103.64, 2157686.38, 2161531.64, 2065788.01, 2567239.81, 2832277.97, 2881565.96, 2826302.44, 3152368.3, 3644614.29, 3698811.08, 3986861.53, 2938493.79, 3056523.97, 2732216.21, 2804235.22, 2623747.05, 2716404.58, 3118107.72, 3280644.4, 2921453.67, 2992289.49, 3259417.55, 2862425.41, 2606637.98, 2565612.99, 2503262.87, 2194279.69, 2163475.06, 2270179.15, 2124744.55, 2001043.43, 2160770.69, 1998941.69, 2218160.72, 2480891.98, 2556639.46, 2505480.23, 3045764.69, 3157557.74, 2387941.68, 2412590.77, 2219238.86, 2670581.82, 2416829.51, 2528293.9, 2460555.25, 2417275.52, 2339903.12, 2224568.13, 2061027.86, 2127261.72, 2302824.61, 2448105.22, 2096069.96, 2192853.02, 1956968.36, 1863792.36, 1927548.11, 2005905.37], "chart_vol_ma": [1757048.36, 1724483.02, 1692436.27, 1660537.24, 1621060.99, 1579804.63, 1541780.75, 1520732.45, 1504376.68, 1476727.37, 1436977.81, 1424797.53, 1430257.37, 1441316.56, 1437991.89, 1425107.92, 1398693.98, 1373158.41, 1351987.69, 1328163.6, 1301791.41, 1276483.01, 1258821.83, 1257570.15, 1255507.32, 1251519.63, 1248107.86, 1238029.98, 1240045.58, 1258632.82, 1275975.2, 1261166.62, 1239625.63, 1219619.02, 1202967.56, 1200929.03, 1194816.66, 1195511.28, 1194414.99, 1203455.51, 1216715.46, 1220021.7, 1223089.52, 1211660.01, 1205920.18, 1200763.3, 1207594.7, 1213720.28, 1212257.07, 1202905.35, 1193499.85, 1186270.65, 1190784.13, 1196312.62, 1194345.49, 1192030.9, 1207709.77, 1213686.08, 1219598.81, 1220125.71, 1223451.56, 1221053.27, 1219271.21, 1239980.53, 1270749.7, 1300217.18, 1318331.22, 1335987.44, 1352622.51, 1364007.29, 1364834.47, 1378699.79, 1374420.36, 1375579.14, 1387616.29, 1398188.52, 1409819.18, 1421683.22, 1441576.62, 1453575.14, 1467544.37, 1492623.34, 1521633.97, 1545663.29, 1558606.54, 1571139.44, 1583127.47, 1595566.45, 1612205.37, 1635498.75, 1666915.91, 1675184.12, 1689740.9, 1696801.34, 1708392.41, 1725263.0, 1725247.66, 1743697.42, 1757207.72, 1792881.54, 1830181.96, 1864157.91, 1918257.67, 1953859.4, 1981361.57, 2010684.29, 2048853.84, 2119393.75, 2163419.83, 2229760.43, 2281712.5, 2342228.17, 2405200.38, 2470030.47, 2501852.5, 2538323.17, 2568925.99, 2599587.02, 2611930.52, 2603367.6, 2611283.1, 2625056.79, 2599759.29, 2586078.76, 2583804.23, 2619119.64, 2607648.19, 2555923.92, 2546355.93, 2503824.23, 2473368.25, 2440163.75, 2410188.55, 2374429.87, 2388236.66, 2385849.34, 2387142.45, 2393814.83, 2390730.14, 2387965.46, 2362456.2, 2322605.34, 2302080.97, 2268240.35, 2231129.6, 2172378.27, 2172737.04, 2173879.23, 2162489.38, 2168346.37, 2166248.51, 2164588.34, 2152600.96, 2137455.48, 2107659.77, 2081962.7, 2072970.19, 2043835.19, 2037556.5, 2043407.62, 2044706.33, 2053657.66, 2056320.96, 2058941.41, 2062037.7, 2061636.84, 2030824.92, 2013868.05, 1989193.87, 1952137.78, 1914533.64, 1902360.91, 1885804.5, 1875265.32, 1849553.39, 1835490.79, 1828352.81, 1823543.01, 1814884.07, 1805863.82, 1812795.21, 1806000.16, 1796106.77, 1800691.73, 1798400.03, 1786657.15, 1793749.34, 1798509.52, 1803512.08, 1814549.36, 1843718.0, 1857129.86, 1884843.1, 1903954.7, 1954233.41, 2008899.67, 2050397.37, 2095828.03, 2163864.73, 2251831.65, 2330821.72, 2440443.8, 2499963.95, 2561071.9, 2613842.67, 2666617.34, 2703695.0, 2743446.58, 2804489.87, 2871326.2, 2908343.7, 2950073.86, 3004968.15, 3044800.02, 3046769.93, 3033436.68, 3014521.53, 2982920.39, 2933475.73, 2864753.97, 2786050.64, 2686759.74, 2647873.58, 2594994.47, 2569291.7, 2553124.53, 2549769.15, 2539222.94, 2535605.78, 2529451.45, 2502775.85, 2473790.92, 2421781.98, 2412189.8, 2402699.38, 2400833.42, 2398698.04, 2409847.83, 2418669.24, 2416388.69, 2413202.85, 2419513.77, 2426616.46, 2449074.64, 2442970.1, 2428568.15, 2398584.6, 2366500.21, 2310589.38, 2253006.76]}};
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+  
+  // Render chart if not overview
+  if (id !== 'overview' && !window['rendered_' + id]) {
+    renderChart(id);
+    window['rendered_' + id] = true;
+  }
+}
+
+function renderChart(code) {
+  const d = DATA[code];
+  const ctx = document.getElementById('chart-' + code);
+  const vctx = document.getElementById('vol-' + code);
+  
+  // Sample labels to avoid overcrowding
+  const labels = d.chart_dates.map((dt, i) => {
+    if (i % 20 === 0) return dt.substring(5);
+    return '';
+  });
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: d.chart_dates,
+      datasets: [
+        {label:'收盘价', data:d.chart_close, borderColor:'#d4d8e8', borderWidth:1.5, pointRadius:0, fill:false, order:1},
+        {label:'MA25', data:d.chart_ma25, borderColor:'#f59e0b', borderWidth:1, pointRadius:0, fill:false, borderDash:[], order:2},
+        {label:'MA55', data:d.chart_ma55, borderColor:'#8b5cf6', borderWidth:1, pointRadius:0, fill:false, order:3},
+        {label:'MA100', data:d.chart_ma100, borderColor:'#06b6d4', borderWidth:1.5, pointRadius:0, fill:false, order:4},
+        {label:'MA250', data:d.chart_ma250, borderColor:'#ef4444', borderWidth:1, pointRadius:0, fill:false, borderDash:[4,4], order:5},
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: {mode:'index', intersect:false},
+      plugins: {
+        legend: {position:'top', labels:{color:'#8890a8', font:{size:11}, usePointStyle:true, pointStyle:'line', padding:15}},
+        tooltip: {backgroundColor:'#1a1e2b', borderColor:'#2a2f42', borderWidth:1, titleColor:'#d4d8e8', bodyColor:'#8890a8',
+          callbacks:{
+            label: function(ctx2){return ctx2.dataset.label+': '+ctx2.parsed.y?.toFixed(2)}
+          }
+        }
+      },
+      scales: {
+        x: {grid:{color:'#1a1e2b'}, ticks:{color:'#5a6180', font:{size:10}, maxTicksLimit:12,
+          callback:function(val,idx){const dt=this.getLabelForValue(val);return idx%20===0?dt.substring(5):''}}},
+        y: {position:'right', grid:{color:'#1a1e2b'}, ticks:{color:'#5a6180', font:{family:'JetBrains Mono',size:10}}}
+      }
+    }
+  });
+  
+  // Volume chart
+  const volColors = d.chart_close.map((c, i) => {
+    if (i === 0) return 'rgba(100,100,100,0.4)';
+    return c >= d.chart_close[i-1] ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)';
+  });
+  
+  new Chart(vctx, {
+    type: 'bar',
+    data: {
+      labels: d.chart_dates,
+      datasets: [
+        {label:'成交额(百万)', data:d.chart_vol, backgroundColor:volColors, borderWidth:0, order:1},
+        {label:'MA20', data:d.chart_vol_ma, type:'line', borderColor:'#f59e0b', borderWidth:1, pointRadius:0, fill:false, order:0}
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display:false},
+        tooltip: {backgroundColor:'#1a1e2b', borderColor:'#2a2f42', borderWidth:1}
+      },
+      scales: {
+        x: {display:false},
+        y: {position:'right', grid:{color:'#1a1e2b'}, ticks:{color:'#5a6180', font:{size:9},
+          callback:function(v){return (v/1000).toFixed(0)+'B'}}}
+      }
+    }
+  });
+}
+</script>
+</body></html>

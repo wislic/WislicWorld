@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杨康平同学（Coming）｜核心观点与监控指标体系</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1714;
+    --paper: #f7f4ef;
+    --paper-warm: #f0ece4;
+    --accent: #c4553a;
+    --accent-dark: #9e3f28;
+    --accent-glow: #e8785f;
+    --gold: #b8963e;
+    --gold-light: #d4b05c;
+    --teal: #2a7a6d;
+    --teal-light: #3a9e8d;
+    --blue-steel: #4a6580;
+    --muted: #7a7268;
+    --border: #d8d0c4;
+    --border-light: #e8e2d8;
+    --shadow-soft: 0 2px 20px rgba(26,23,20,0.06);
+    --shadow-card: 0 4px 30px rgba(26,23,20,0.08);
+    --radius: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.85;
+    font-size: 15px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .hero {
+    background: linear-gradient(165deg, #1a1714 0%, #2c2520 40%, #3d2e24 100%);
+    color: var(--paper);
+    padding: 80px 40px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 120px,
+      rgba(200,180,150,0.03) 120px,
+      rgba(200,180,150,0.03) 121px
+    );
+  }
+  .hero::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    opacity: 0.9;
+  }
+  .hero h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+  .hero h1 span { color: var(--gold-light); }
+  .hero-meta {
+    font-size: 13px;
+    color: rgba(247,244,239,0.5);
+    font-weight: 300;
+  }
+
+  /* === NAV === */
+  .toc-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-soft);
+  }
+  .toc-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .toc-inner::-webkit-scrollbar { display: none; }
+  .toc-inner a {
+    display: block;
+    padding: 14px 18px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .toc-inner a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* === MAIN === */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+  }
+
+  /* === SECTIONS === */
+  .section {
+    padding-top: 56px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 3vw, 28px);
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  /* === SUB HEADINGS === */
+  h3 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 36px 0 14px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3 .h3-marker {
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 24px 0 8px;
+    color: var(--blue-steel);
+  }
+
+  p {
+    margin-bottom: 14px;
+  }
+
+  /* === QUOTE BLOCKS === */
+  .philosophy-card {
+    background: linear-gradient(135deg, #fff 0%, #faf8f4 100%);
+    border-left: 4px solid var(--gold);
+    padding: 24px 28px;
+    margin: 24px 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    box-shadow: var(--shadow-card);
+  }
+  .philosophy-card p {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15.5px;
+    line-height: 1.9;
+    color: #2c2520;
+    margin-bottom: 0;
+  }
+  .philosophy-card .attr {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  /* === TIMELINE === */
+  .timeline {
+    position: relative;
+    padding-left: 28px;
+    margin: 24px 0;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-item {
+    position: relative;
+    margin-bottom: 22px;
+    padding-left: 12px;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--paper);
+  }
+  .tl-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .tl-title {
+    font-weight: 700;
+    font-size: 14.5px;
+    margin-bottom: 4px;
+  }
+  .tl-desc {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* === TABLES === */
+  .table-wrap {
+    margin: 24px 0;
+    overflow-x: auto;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13.5px;
+  }
+  thead th {
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 600;
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+  }
+  thead th:first-child { border-radius: var(--radius) 0 0 0; }
+  thead th:last-child { border-radius: 0 var(--radius) 0 0; }
+  tbody td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(196,85,58,0.02); }
+  .indicator-name {
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    font-size: 13.5px;
+  }
+  .indicator-cat {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .cat-emotion { background: #fde8e8; color: #9e3f28; }
+  .cat-capital { background: #e0f0e8; color: #1a6b50; }
+  .cat-spread { background: #e6ecf4; color: #3a5a7a; }
+  .cat-structure { background: #f5ead8; color: #8a6a2e; }
+  .cat-macro { background: #ede0f0; color: #6a3a80; }
+  .cat-option { background: #e0eff5; color: #2a6a7a; }
+
+  /* === CARDS === */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
+    border-top: 3px solid var(--border);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover {
+    border-top-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .card-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-weight: 700;
+    font-size: 14.5px;
+    margin-bottom: 8px;
+  }
+  .card-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* === ABCDE FLOW === */
+  .abcde-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 28px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .abcde-node {
+    text-align: center;
+    padding: 16px 10px;
+    min-width: 100px;
+  }
+  .abcde-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 17px;
+    color: #fff;
+    margin: 0 auto 8px;
+  }
+  .abcde-label {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    max-width: 120px;
+    margin: 0 auto;
+  }
+  .abcde-arrow {
+    color: var(--border);
+    font-size: 20px;
+    flex-shrink: 0;
+    margin: 0 -4px;
+  }
+  .dot-a { background: var(--accent); }
+  .dot-b { background: var(--gold); }
+  .dot-c { background: var(--teal); }
+  .dot-d { background: var(--blue-steel); }
+  .dot-e { background: #6a5a8a; }
+
+  /* === PRINCIPLE LIST === */
+  .principles {
+    counter-reset: principle;
+    margin: 20px 0;
+  }
+  .principle-item {
+    counter-increment: principle;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .principle-item::before {
+    content: counter(principle);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: #fde8e8;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .principle-content {
+    flex: 1;
+  }
+  .principle-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .principle-desc {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* === EMPHASIS === */
+  strong { font-weight: 700; }
+  .highlight {
+    background: linear-gradient(transparent 60%, rgba(196,85,58,0.12) 60%);
+    padding: 0 2px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 3px;
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin: 2px 2px;
+  }
+
+  /* === FOOTER === */
+  .footer {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 640px) {
+    .hero { padding: 48px 20px 40px; }
+    .main { padding: 0 20px 60px; }
+    .toc-inner { padding: 0 20px; }
+    .philosophy-card { padding: 18px 20px; }
+    table { font-size: 12.5px; }
+    thead th, tbody td { padding: 10px 12px; }
+    .abcde-flow { gap: 0; }
+    .abcde-node { min-width: 70px; padding: 10px 4px; }
+  }
+
+  /* === ANIMATION === */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section {
+    animation: fadeUp 0.5s ease-out both;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">Trading Framework Archive · 2025.07 — 2026.03</div>
+    <h1>杨康平同学（Coming）<br><span>核心观点、交易逻辑与监控指标体系</span></h1>
+    <div class="hero-meta">基于知识星球全文归档（9个月，2500+条内容）系统整理</div>
+  </div>
+</header>
+
+<!-- ============ TOC ============ -->
+<nav class="toc-bar">
+  <div class="toc-inner">
+    <a href="#philosophy">交易哲学</a>
+    <a href="#evolution">逻辑演变</a>
+    <a href="#methodology">方法论体系</a>
+    <a href="#indicators">监控指标</a>
+    <a href="#abcde">ABCDE结构</a>
+    <a href="#discipline">纪律心理</a>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ============ PART 1: PHILOSOPHY ============ -->
+<section class="section" id="philosophy">
+  <div class="section-num">Part 01</div>
+  <div class="section-title">核心交易哲学</div>
+
+  <h3><span class="h3-marker"></span>"逻辑派"身份定位</h3>
+  <p>Coming 反复强调自己是<strong>"逻辑派"</strong>而非"技术派"。他的交易不以止损线和技术形态为核心依据，而是围绕<strong>估值、情绪、结构和数据</strong>做出判断。核心信条：</p>
+
+  <div class="philosophy-card">
+    <p>数据推导逻辑，逻辑反映到涨跌；逻辑不会在一天之内兑现，但给足时间，逻辑一定会兑现。</p>
+    <div class="attr">—— 2026.02.06</div>
+  </div>
+
+  <p>他认为"投资投的是数据分析能力、遵守交易纪律、逻辑与认知"，而大部分人投的只是涨跌，所以亏钱。</p>
+
+  <h3><span class="h3-marker"></span>"实战派"立场</h3>
+  <p>从星球创立初期（2025年7月）起就明确声明：自己分享的是<strong>长期持有100手、过亿名义市值的实战经验</strong>，而不是纸上谈兵。所有逻辑都对应着真金白银的仓位操作。</p>
+
+  <h3><span class="h3-marker"></span>择时核心——估值与情绪的双锚</h3>
+  <p>贯穿全部九个月的最根本择时原则：</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon">🧊</div>
+      <div class="card-title">哀鸿遍野时开仓</div>
+      <div class="card-text">情绪极端悲观 → 做多。不追求精准抄底，而是在恐慌中分批布局。</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔥</div>
+      <div class="card-title">行情沸腾时不适合作为起点</div>
+      <div class="card-text">情绪极端乐观 → 减仓或做空。建立在"估值位置 + 情绪状态"双重确认之上。</div>
+    </div>
+  </div>
+
+  <h3><span class="h3-marker"></span>"偏见"与"定力"的区分</h3>
+  <p>2026年2月提出的精炼判断标准：如果一个逻辑每天都被事实削弱，那叫<strong>偏见</strong>；如果逻辑每天都被事实加强，只是价格还没反应，那叫<strong>定力</strong>。认错的条件不是价格创新高，而是<span class="highlight">核心逻辑变量是否被证伪</span>（例如成交量是否破前高）。</p>
+</section>
+
+<!-- ============ PART 2: EVOLUTION ============ -->
+<section class="section" id="evolution">
+  <div class="section-num">Part 02</div>
+  <div class="section-title">核心交易逻辑月度演变</div>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-date">2025年7月</div>
+      <div class="tl-title">体系起点——吃贴水策略框架确立</div>
+      <div class="tl-desc">核心理念：吃贴水不是短线暴富工具，起点选择很重要，估值与情绪是择时核心。分层布局（多个点位分散下注），不把筹码集中在单一点位。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025年8月</div>
+      <div class="tl-title">顶部风险渐成——平滑减仓 + 期权防御</div>
+      <div class="tl-desc">判断牛市未结束但阶段性顶部风险越来越大。策略转向"平滑减仓 + 买put/卖call + 留足子弹"。不主张普通人做空，核心态度是"进退有余"。月末确立"微盘股1700"为阶段性决策锚点。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025年9月</div>
+      <div class="tl-title">坚定看空微盘股——锚定1700</div>
+      <div class="tl-desc">全月锚定"微盘股1700"。方法论：贴水突然变大往往预示大波动、微盘股是最关键先行指标。执行上不激进梭哈，持续平IF多单、持有IM空单与put、动态减仓与换月。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025年10月</div>
+      <div class="tl-title">负反馈滚雪球——模型化回调框架</div>
+      <div class="tl-desc">完整提出"位置高→情绪脆弱→小票吸血→成交量萎缩→负反馈滚雪球式下跌"。形成14%均值回撤、20%回撤概率60%、情绪冰点6261、进三退一筹码分布位等模型化回调框架。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025年11月</div>
+      <div class="tl-title">看空逻辑与做空成本分离</div>
+      <div class="tl-desc">核心矛盾：逻辑正确 ≠ 做空值得持有。月中一度"认输投降空仓观望"，月下旬微盘股转弱后重新启动做空。核心教训：贴水、逼仓、资金占用、时间成本都很高，空仓等触发条件比硬扛更优。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2025年12月</div>
+      <div class="tl-title">调整成局——跨品种交易展开</div>
+      <div class="tl-desc">核心逻辑链：微盘股先跌→IM跟跌→情绪杀→大调整。月末部分切换到黄金/白银VIX交易，展现跨品种迁移能力。同时暴露仓位控制问题。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026年1月</div>
+      <div class="tl-title">套利、逼仓识别与高压实战</div>
+      <div class="tl-desc">IM/IC价差套利成为核心策略。经历两种逼仓（普涨式 vs 定向攻击500/1000）。仓位管理成为生死问题。核心认知：逼仓是一种可被辨识的市场结构，不是不可预见的随机事件。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026年2月</div>
+      <div class="tl-title">健康调整预期成型——方法论成熟</div>
+      <div class="tl-desc">从"多300空500/1000"过渡到"健康调整"高置信度判断。威科夫结构、人工数据整理+AI辅助、多指标交叉验证。"逻辑已收束，只差路径选择"。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026年3月</div>
+      <div class="tl-title">ABCDE结构推进——石油危机叠加</div>
+      <div class="tl-desc">围绕ABCDE点位结构交易。C点附近完成28手减仓，策略从进攻切换到等待。石油危机（伊朗封锁霍尔木兹海峡）成为宏观驱动核心。原油→制造业利润→中证1000盈利脆弱性链条清晰化。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART 3: METHODOLOGY ============ -->
+<section class="section" id="methodology">
+  <div class="section-num">Part 03</div>
+  <div class="section-title">交易方法论体系</div>
+
+  <h3><span class="h3-marker"></span>择时框架——"位置轴 + 时间轴"</h3>
+  <p>2026年3月正式提出双轴框架。<strong>位置轴</strong>回答"在哪里交易"（估值高低、关键点位、价差极值），<strong>时间轴</strong>回答"什么时候交易"（情绪到位、资金枯竭、节后行为金融特征等）。两轴配合才构成完整的交易决策。</p>
+
+  <h3><span class="h3-marker"></span>先行指标逻辑——"头与身体"</h3>
+  <div class="philosophy-card">
+    <p>微盘股是行情的龙头和情绪急先锋，沪深300是身体。如果龙头涨不动、主力也涨不动，就说明是强弩之末。</p>
+    <div class="attr">—— 2025.09.12</div>
+  </div>
+  <p>调整时微盘股先行下跌，再映射到中证1000和IM。历史涨幅比例约3:1，下跌也按类似比例扩散。</p>
+
+  <h3><span class="h3-marker"></span>仓位管理哲学</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon">⚖️</div>
+      <div class="card-title">仓位舒服 > 观点正确</div>
+      <div class="card-text">看对方向不等于可以无限加仓。"80手太多了，回到心理能接受的50手。"</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📉</div>
+      <div class="card-title">平滑减仓</div>
+      <div class="card-text">不一次清仓，分批有序退出。每次减仓量根据情绪和位置动态调整。</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">💰</div>
+      <div class="card-title">保留子弹优先级最高</div>
+      <div class="card-text">下跌后有足够子弹开多单，比赌方向更重要。"为了保留最充足的子弹。"</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <div class="card-title">用交易计划代替猜测</div>
+      <div class="card-text">预设不同情境的操作方案，如"反弹到8050加12手，到8180恢复48手"。</div>
+    </div>
+  </div>
+
+  <h3><span class="h3-marker"></span>期权运用框架</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title">卖 Call</div>
+      <div class="card-text">基于估值观点和情绪主导趋势，在<strong>高VIX环境</strong>下性价比极高。</div>
+    </div>
+    <div class="card">
+      <div class="card-title">买 Put</div>
+      <div class="card-text">失败亏损有限、成功数倍利润，同时不会增加太多风险敞口。顶部防御系统的核心组件。</div>
+    </div>
+    <div class="card">
+      <div class="card-title">末日期权彩票</div>
+      <div class="card-text">对冲"最后一涨"风险。买入成本极低的末日期权，以极小代价覆盖尾部风险。</div>
+    </div>
+    <div class="card">
+      <div class="card-title">跨期套利</div>
+      <div class="card-text">恐慌杀跌时做"空近月+多远月"，赚取远月过度恐慌修复的收益，而非方向上涨的钱。</div>
+    </div>
+  </div>
+
+  <h3><span class="h3-marker"></span>吃贴水策略的适用边界</h3>
+  <p>Coming 明确承认：吃贴水策略<strong>更适合行情上升段</strong>，熊市里大部分时候并不适用。做空要烧掉每月100多万贴水，位置高不等于立刻跌，所以有时不如空仓等一个绝对情绪高点再做空，或者干脆放弃做空。<strong>看空逻辑正确 ≠ 做空交易划算</strong>——这是11月最核心的教训。</p>
+
+  <h3><span class="h3-marker"></span>风控铁律</h3>
+  <div class="philosophy-card">
+    <p>杠杆低一点。</p>
+    <div class="attr">—— 被问到风控铁律时的极简回答，2025.10.25</div>
+  </div>
+  <p>围绕这一核心，延伸出：保证金管理、风险敞口控制、时间止损（"空单再持有两周，不盈利就投降"）、不追求零回撤、不因看对方向就无限加仓。</p>
+</section>
+
+<!-- ============ PART 4: INDICATORS ============ -->
+<section class="section" id="indicators">
+  <div class="section-num">Part 04</div>
+  <div class="section-title">监控指标分类与逻辑说明</div>
+
+  <!-- 4.1 情绪类 -->
+  <h3><span class="h3-marker"></span>一、情绪类指标</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">PCR</span><br><span style="font-size:11px;color:var(--muted)">Put-Call Ratio</span></td>
+          <td><span class="indicator-cat cat-emotion">情绪</span></td>
+          <td>最高频使用的情绪指标。PCR处于极值时判断市场恐慌/贪婪程度。但强调<strong>PCR只是多指标中的一个</strong>，不能单独使用。PCR见顶后的前三根阴线有统计规律，可作为"盘中剧本"参考。PCR落到中值以下则存在超跌反弹需求。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">情绪指数</span><br><span style="font-size:11px;color:var(--muted)">韭圈 / 芝士财富</span></td>
+          <td><span class="indicator-cat cat-emotion">情绪</span></td>
+          <td>第三方情绪指数。情绪指数74属于偏低尚未冲顶，沸腾时对应极高值。情绪到<strong>"冰点"</strong>是底部区域的必要条件之一。与PCR、成交量等交叉验证使用。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">VIX</span><br><span style="font-size:11px;color:var(--muted)">波动率指数</span></td>
+          <td><span class="indicator-cat cat-emotion">情绪</span></td>
+          <td>VIX接近阶段极值 = 历史级别波动。高VIX下卖call性价比极高。VIX是跨品种共振（黄金/白银/股指）的桥梁。<strong>VIX爆拉</strong>意味着"阶段性高点中的高点、鱼尾中的鱼尾"。"历史级别VIX"对应做对方向时可以吃到大段利润。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">群体情绪定性</span><br><span style="font-size:11px;color:var(--muted)">社群观察 / 抄底人数</span></td>
+          <td><span class="indicator-cat cat-emotion">情绪</span></td>
+          <td>包括星球群情绪观察、抄底人数统计。<strong>"真正的底部不可能被那么多人抄到"</strong>——大量人抄底时绝不可能是底部。"人声鼎沸时等待，鬼哭狼嚎时入场"。财经自媒体开始转载逻辑时说明信息差正在消失。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4.2 资金量能类 -->
+  <h3><span class="h3-marker"></span>二、资金与量能类指标</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">成交量</span></td>
+          <td><span class="indicator-cat cat-capital">量能</span></td>
+          <td><strong>最核心的量能观测变量</strong>。"没有成交量的上涨最终都是诱多"——缩量上涨 = 脆弱上涨。成交量萎缩（如从4万亿到2.9万亿再到2.5万亿以下）是下跌确认的重要证据。<span class="highlight">成交量破前高才是空头需要真正认错的时候</span>，而非价格创新高。下跌开始后成交量三天内会快速萎缩。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">融资余额</span><br><span style="font-size:11px;color:var(--muted)">融资交易比例</span></td>
+          <td><span class="indicator-cat cat-capital">量能</span></td>
+          <td>融资余额进入下降通道但尚未到杀杠杆阶段时，说明市场退潮但还没到最惨烈阶段（如26200亿时）。融资余额未上升 + 小票多头看似强 → 实则空头占优势，一旦没有后续资金接力泡沫会一溃千里。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">ETF净申购/赎回</span></td>
+          <td><span class="indicator-cat cat-capital">量能</span></td>
+          <td>ETF净申购约150亿 → 短期超跌反弹条件。ETF赎回 → 判断机构/国家队行为的线索。卫星ETF（小票类ETF）的表现被视为散户资金方向的代理变量。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">主力资金流向</span></td>
+          <td><span class="indicator-cat cat-capital">量能</span></td>
+          <td>辅助验证。主力资金5天流出8000亿时佐证"这里不应该涨"的判断。国家队主要卖300时消耗了300的流动性并压制股价。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4.3 价差基差类 -->
+  <h3><span class="h3-marker"></span>三、价差与基差类指标</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">IC/IM 贴水（基差）</span></td>
+          <td><span class="indicator-cat cat-spread">价差</span></td>
+          <td><strong>最核心的结构指标</strong>。贴水突然变大 → 通常意味着短期有较大波动，更倾向于大跌。基差没有走扩在历史中是非常诡异的情况，需要特别警惕（可能是量化吃掉了套利超额）。期货基差不转为贴水 → 后续还会有逼仓。IC/IM 贴水38点 + 2.2万亿成交符合看空逻辑。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">500/1000 价差</span></td>
+          <td><span class="indicator-cat cat-spread">价差</span></td>
+          <td>价差接近阶段顶点（如590接近600）→ 减仓信号。价差过小 → 市场情绪没那么热，不合理定价没那么严重，也可能意味着1000跌得没那么多。<strong>所有不合理的价差最终都会回归</strong>。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">IM/IC 价差</span></td>
+          <td><span class="indicator-cat cat-spread">价差</span></td>
+          <td>价差非常接近0时 → 往往对应相对底部与后续一波上涨。是确定性较高的套利机会。"多IM空IC，3个月内几乎百分百可以套利2万一手"。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">近远月价差</span></td>
+          <td><span class="indicator-cat cat-spread">价差</span></td>
+          <td>近远月价差缩小 → 可能意味着"要涨了"。恐慌时远月流动性差更容易被砸出极端深贴水 → 可做"空近月+多远月"的跨期套利。恐慌退潮后远月修复收益显著。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">升贴水结构</span></td>
+          <td><span class="indicator-cat cat-spread">价差</span></td>
+          <td>升水没有大幅提升 → 空头有利信号之一。天量升水出现后修正的过程是派发结构的关键识别点。1.23修正后出现天量升水 → 逼仓周期结束的确认信号之一。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4.4 市场结构类 -->
+  <h3><span class="h3-marker"></span>四、市场结构类指标</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">微盘股指数</span></td>
+          <td><span class="indicator-cat cat-structure">结构</span></td>
+          <td><strong>全体系中最核心的先行指标</strong>。"微盘股跌了，IM肯定崩。"微盘股与中证1000按约<strong>3:1</strong>的比例映射涨跌幅。微盘股崩盘 = 重新做空的触发器。微盘股到1700 = 阶段性决策锚点（平部分空仓、判断泡沫释放程度、决定何时重新吃贴水）。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">涨跌家数</span></td>
+          <td><span class="indicator-cat cat-structure">结构</span></td>
+          <td>全市场下跌家数高是佐证下行结构的辅助变量。"场内只有散户，没有历史盈利资金或决策资金"时更有意义。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">换手率 / 天量换手</span></td>
+          <td><span class="indicator-cat cat-structure">结构</span></td>
+          <td>天量换手后的行为模式是判断<strong>顶部派发</strong>的关键。如1.14天量换手 → 后续12.17~2.12逼仓周期 → 派发结构确认。换手率与成交量配合判断节奏。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">逼仓识别</span></td>
+          <td><span class="indicator-cat cat-structure">结构</span></td>
+          <td>区分两种类型：<strong>普涨式逼仓</strong>（全市场普涨，如1.14）和<strong>定向逼仓</strong>（重点攻击500和1000，如1.23）。两者对后续结构影响不同。逼仓是一种可被辨识的市场结构，不是不可预见的随机事件。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">平均股价 / 散户心理位</span></td>
+          <td><span class="indicator-cat cat-structure">结构</span></td>
+          <td>"平均股价再跌1%就到散户心理恐慌位"——散户心理恐慌位的接近程度是判断恐慌盘是否即将出现的辅助依据。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4.5 宏观外部变量 -->
+  <h3><span class="h3-marker"></span>五、宏观与外部变量</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">原油 / 石油危机</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>2026年3月的核心宏观驱动。传导链条：伊朗封锁霍尔木兹海峡 → 原油高起 → 中证1000净利润率仅<strong>3.86%</strong>（vs 300的12%），对油价冲击更脆弱。原油不只是汽油，而是<strong>工业生产源头</strong>。中国是进口国受损更大。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">美联储利率 / 降息预期</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>不降息已成定局 → 利率预期重估。加息概率抬升被纳入市场风险定价。利率是"真金白银"，与石油危机形成双重压力。降息属于利好出尽。9.18降息后预期进入"牛2"阶段。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">港股走势</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>港股先行下跌是A股调整的<strong>先行信号</strong>。IM与日经、纳指、金龙等全球风险资产走弱具有联动性。港股先行回落 → 微盘股上攻乏力 → A股调整概率上升。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">国债走势</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>国债涨 + 300涨 + 50涨 + 成交量萎缩 + 小票被吸血 = 风格极度分化的结构信号。国债不跌时猜测是快到顶了、有防守资金进去。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">停火概率</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>地缘冲突的停火概率结构变化被纳入盘前因子清单。短期略有改善不代表风险解除。"船过不去"是短期内无法改变的硬约束。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">人民币汇率</span></td>
+          <td><span class="indicator-cat cat-macro">宏观</span></td>
+          <td>被视为"一根稻草"级别的边际变量，<strong>不影响主逻辑</strong>。调整外汇准备金率本质是减震器，最多影响短期情绪，不是趋势改变者。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4.6 期权专用 -->
+  <h3><span class="h3-marker"></span>六、期权专用指标</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20%">指标</th>
+          <th style="width:10%">分类</th>
+          <th>逻辑说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="indicator-name">MO 隐波</span><br><span style="font-size:11px;color:var(--muted)">隐含波动率</span></td>
+          <td><span class="indicator-cat cat-option">期权</span></td>
+          <td>MO隐波到<strong>38附近</strong> ≈ 500/1000的短期低点。隐波的位置决定了期权策略的性价比——高隐波利于卖方（卖call），低隐波利于买方（买put）。</td>
+        </tr>
+        <tr>
+          <td><span class="indicator-name">期权时间价值消耗</span></td>
+          <td><span class="indicator-cat cat-option">期权</span></td>
+          <td>持有650张put、价值380万时<strong>每天消耗时间价值25万</strong>。期权做得好不好决定最终战绩。期权最肥美的时候过去后需要主动减仓锁定利润。时间拖太久期权会归零。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ PART 5: ABCDE ============ -->
+<section class="section" id="abcde">
+  <div class="section-num">Part 05</div>
+  <div class="section-title">ABCDE 点位结构框架（2026年3月核心）</div>
+
+  <p>这是 Coming 在2026年3月正式使用的交易结构，是其整套方法论的集大成应用：</p>
+
+  <div class="abcde-flow">
+    <div class="abcde-node">
+      <div class="abcde-dot dot-a">A</div>
+      <div class="abcde-label"><strong>阶段性高点</strong><br>2.27 / 8560</div>
+    </div>
+    <div class="abcde-arrow">→</div>
+    <div class="abcde-node">
+      <div class="abcde-dot dot-b">B</div>
+      <div class="abcde-label"><strong>反弹高点</strong><br>3.12</div>
+    </div>
+    <div class="abcde-arrow">→</div>
+    <div class="abcde-node">
+      <div class="abcde-dot dot-c">C</div>
+      <div class="abcde-label"><strong>恐慌杀跌低点</strong><br>≈3.23 核心减仓窗口</div>
+    </div>
+    <div class="abcde-arrow">→</div>
+    <div class="abcde-node">
+      <div class="abcde-dot dot-d">D</div>
+      <div class="abcde-label"><strong>超跌反弹终点</strong><br>待确认</div>
+    </div>
+    <div class="abcde-arrow">→</div>
+    <div class="abcde-node">
+      <div class="abcde-dot dot-e">E</div>
+      <div class="abcde-label"><strong>理想再入场位</strong><br>"完美的位置"</div>
+    </div>
+  </div>
+
+  <h3><span class="h3-marker"></span>各节点判断标准</h3>
+
+  <div class="card-grid">
+    <div class="card" style="border-top-color: var(--accent);">
+      <div class="card-title" style="color: var(--accent);">A → B（主跌浪）</div>
+      <div class="card-text">因上涨是完整结构，所以下跌也会是完整结构。3.13确认主跌浪启动。</div>
+    </div>
+    <div class="card" style="border-top-color: var(--teal);">
+      <div class="card-title" style="color: var(--teal);">C 点判断</div>
+      <div class="card-text">不仅看价格（数据上7600是C点），还要看是否出现恐慌盘。约8-9个指标到位 + 基差配合 → 概率80%。基差未充分配合时减仓金额也相应减少。</div>
+    </div>
+    <div class="card" style="border-top-color: var(--blue-steel);">
+      <div class="card-title" style="color: var(--blue-steel);">C → D（最难判断）</div>
+      <div class="card-text">是整轮结构中最难判断的一段。技术性超跌反弹 ≠ 趋势反转。"不做"本身就是最高期望值的选择。</div>
+    </div>
+    <div class="card" style="border-top-color: #6a5a8a;">
+      <div class="card-title" style="color: #6a5a8a;">E 点（理想位置）</div>
+      <div class="card-text">"拿着空单等到E点减仓，绝对不会错，也省心。"E点被视为更理想、更完美的再布局位置。</div>
+    </div>
+  </div>
+
+  <h3><span class="h3-marker"></span>空单回补计划（量化方案示例）</h3>
+  <p>Coming 在 C→D 阶段给出了明确的量化回补计划，而非凭感觉操作：</p>
+  <div class="philosophy-card">
+    <p>如果明天后天继续上涨，可能会先少量加回一点空单，可能是6手；如果反弹到8050，可能会加12手；如果反弹到8180，我会把空单加回48手。我会用交易计划去代替瞎猜反弹行情的走势。</p>
+    <div class="attr">—— 2026.03.25</div>
+  </div>
+</section>
+
+<!-- ============ PART 6: DISCIPLINE ============ -->
+<section class="section" id="discipline">
+  <div class="section-num">Part 06</div>
+  <div class="section-title">交易纪律与心理管理精要</div>
+
+  <div class="principles">
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">不为交易而交易</div>
+        <div class="principle-desc">"不做"本身就是最高期望值的选择。投资不是比勤奋的游戏，近几个月没怎么动不代表不在工作。</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">5%人盈利、95%人亏损</div>
+        <div class="principle-desc">不能跟着大多数人想法走。期货市场的本质决定了必须站在多数人的对立面思考。</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">趋势市里指标钝化时的应对</div>
+        <div class="principle-desc">把交易也钝化——逐步推进，不要一下满仓一下清仓。用渐进节奏匹配指标失灵期。</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">拍脑袋想，不如跟着数据走</div>
+        <div class="principle-desc">当数据与主观感受冲突时，以数据为准。缩量不能孤立解读，要和多个数据一起对照看。</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">预案管理</div>
+        <div class="principle-desc">预设极端情况（如IM/IC单日跌6%）的应对方案。冷静预案优于情绪上头。"放弃幻想，早做准备。"</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">不耍小聪明</div>
+        <div class="principle-desc">硬吃回撤，不在C→D段做短线交易来"优化"净值曲线。"就像年后硬吃红包行情的回撤一样，这是投资过程之不可避免的部分。"</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">对国家队保持敬畏</div>
+        <div class="principle-desc">"曾经与国家队作对所以亏钱。"国家队不会和散户"过家家"做短差。散户以为自己比国家队聪明是危险的幻觉。</div>
+      </div>
+    </div>
+    <div class="principle-item">
+      <div class="principle-content">
+        <div class="principle-title">投资不缺机会，耐心等待</div>
+        <div class="principle-desc">"在人声鼎沸时等待。"真正高胜率的机会需要情绪极端才会出现，中间的大部分时间应该什么都不做。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="philosophy-card" style="border-left-color: var(--teal);">
+    <p>如果没有一手消息，就不要对消息下注。逻辑是为估值服务的。不要怀疑，只需要等合理的事发生。行情最高点是被最疯狂的人推上去的，不需要理解疯子。</p>
+    <div class="attr">—— 综合多处核心表述</div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  本文件基于杨康平同学知识星球 2025年7月至2026年3月全文归档内容整理<br>
+  用于核心观点提炼、逻辑框架梳理与监控指标分类参考
+</footer>
+
+</body>
+</html>
