@@ -276,6 +276,17 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('calendar')">经济日历</button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('calendar')">月历视图</div>
+        <div class="dd-item-static" onclick="showPanel('calendar')">时间线视图</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('calendar')">本周重要事件</div>
+        <div class="dd-item-static" onclick="showPanel('calendar')">央行决议日程</div>
+      </div>
+    </div>
+
+    <div class="nav-item">
       <button class="nav-btn" onclick="showPanel('macro')">宏观研究</button>
       <div class="dropdown">
         <div class="dd-item-static" onclick="showPanel('macro')">宏观框架</div>
