@@ -449,6 +449,48 @@ a{color:inherit;text-decoration:none}
     </div>
   </div>
 
+  <!-- ═══ ASSETS PANEL ═══ -->
+  <div class="panel" id="p-assets">
+    <div class="panel-hd"><h2>大类资产</h2><p>权益 · 债券 · 大宗商品 · 外汇 · 数字货币 — 跨市场联动监控</p></div>
+
+    <!-- Sub-tab filter -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="assetFilters">
+      <button class="v-btn asset-filter-btn" style="font-size:12px;border-color:var(--acc-border);color:var(--acc)" data-sub="all" onclick="filterAssets('all',this)">全部</button>
+      <button class="v-btn asset-filter-btn" style="font-size:12px" data-sub="equity" onclick="filterAssets('equity',this)">权益市场</button>
+      <button class="v-btn asset-filter-btn" style="font-size:12px" data-sub="bond" onclick="filterAssets('bond',this)">债券市场</button>
+      <button class="v-btn asset-filter-btn" style="font-size:12px" data-sub="commodity" onclick="filterAssets('commodity',this)">大宗商品</button>
+      <button class="v-btn asset-filter-btn" style="font-size:12px" data-sub="fx" onclick="filterAssets('fx',this)">外汇市场</button>
+      <button class="v-btn asset-filter-btn" style="font-size:12px" data-sub="crypto" onclick="filterAssets('crypto',this)">数字货币</button>
+    </div>
+
+    <div class="cgrid cg3" id="assetCards">
+      <!-- Equity -->
+      <div class="card asset-card" data-asset="equity"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat" style="color:var(--red)">权益</span></div><h3>A股 · 上证综指</h3><p>3,342点，PMI连续两月站上荣枯线，基钦补库存逻辑驱动中小盘反弹。科技AI+出海制造双主线。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card asset-card" data-asset="equity"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat" style="color:var(--blue)">权益</span></div><h3>美股 · S&P 500</h3><p>Core PCE连续超预期压制估值，但AI资本开支周期支撑科技股盈利。联储降息延后至Q3。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card asset-card" data-asset="equity"><div class="card-accent ca-green"></div><div class="card-top"><span class="card-cat" style="color:var(--green)">权益</span></div><h3>港股 · 恒生科技</h3><p>南向资金持续流入，互联网龙头回购加速。估值处于历史30分位，安全边际充足。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+
+      <!-- Bond -->
+      <div class="card asset-card" data-asset="bond"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat" style="color:var(--blue)">债券</span></div><h3>中国利率债</h3><p>10Y国债1.815%，经济弱复苏+宽货币→收益率仍有下行空间。久期建议拉长至4.5Y。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card asset-card" data-asset="bond"><div class="card-accent ca-amber"></div><div class="card-top"><span class="card-cat" style="color:var(--acc)">债券</span></div><h3>中国信用债</h3><p>利差处于历史25分位，化债政策降低尾部风险。AA+下沉至3Y，城投债仍有Carry空间。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card asset-card" data-asset="bond"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat" style="color:var(--red)">债券</span></div><h3>美债 · 10Y UST</h3><p>4.35%高位震荡，Core PCE黏性限制下行空间。短端倒挂持续，衰退信号与就业韧性矛盾。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+
+      <!-- Commodity -->
+      <div class="card asset-card" data-asset="commodity"><div class="card-accent ca-amber"></div><div class="card-top"><span class="card-cat" style="color:var(--acc)">商品</span></div><h3>黄金 · XAU</h3><p>$3,024，央行购金+地缘避险双驱动。美伊停火不确定性支撑，实际利率下行打开上行空间。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card asset-card" data-asset="commodity"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat" style="color:var(--red)">商品</span></div><h3>原油 · Brent</h3><p>$71.34，美伊停火谈判延期，霍尔木兹海峡通行量低于正常30%。供给扰动vs需求疲弱博弈。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card asset-card" data-asset="commodity"><div class="card-accent ca-cyan"></div><div class="card-top"><span class="card-cat" style="color:var(--cyan)">商品</span></div><h3>碳酸锂</h3><p>期货主力合约震荡筑底，下游排产回暖但库存仍高。供需再平衡预计Q3实现。</p><div class="card-tags"><span class="card-tag" style="background:rgba(212,74,74,.1);color:var(--red)">看空</span></div></div>
+
+      <!-- FX -->
+      <div class="card asset-card" data-asset="fx"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat" style="color:var(--blue)">外汇</span></div><h3>美元指数 · DXY</h3><p>103.2，联储降息延后支撑美元。但财政赤字扩张与去美元化长期趋势形成制约。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card asset-card" data-asset="fx"><div class="card-accent ca-amber"></div><div class="card-top"><span class="card-cat" style="color:var(--acc)">外汇</span></div><h3>人民币 · USDCNH</h3><p>7.278，央行逆周期调节维稳。中美利差倒挂收窄，贬值压力边际减轻。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card asset-card" data-asset="fx"><div class="card-accent ca-green"></div><div class="card-top"><span class="card-cat" style="color:var(--green)">外汇</span></div><h3>日元 · USDJPY</h3><p>BOJ加息预期升温，利差交易(Carry Trade)平仓风险积聚。关注155关口突破方向。</p><div class="card-tags"><span class="card-tag" style="background:rgba(212,74,74,.1);color:var(--red)">看空美元/日元</span></div></div>
+
+      <!-- Crypto -->
+      <div class="card asset-card" data-asset="crypto"><div class="card-accent ca-purple"></div><div class="card-top"><span class="card-cat" style="color:var(--purple)">数币</span></div><h3>比特币 · BTC</h3><p>ETF资金流入放缓，链上活跃度回落。Halving后供给冲击已price in，等待新催化剂。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card asset-card" data-asset="crypto"><div class="card-accent ca-purple"></div><div class="card-top"><span class="card-cat" style="color:var(--purple)">数币</span></div><h3>以太坊 · ETH</h3><p>L2生态扩张推动Gas消耗回升，ETH/BTC汇率处于历史低位。质押收益率3.8%提供底部支撑。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card asset-card" data-asset="crypto"><div class="card-accent ca-purple"></div><div class="card-top"><span class="card-cat" style="color:var(--purple)">数币</span></div><h3>稳定币 · USDT/USDC</h3><p>总市值突破$200B，链上结算规模持续扩张。监管框架逐步清晰，机构采用率提升。</p></div>
+    </div>
+  </div>
+
   <!-- ═══ GEOINT PANEL ═══ -->
   <div class="panel" id="p-geoint">
     <div class="panel-hd"><h2>地缘情报</h2><p>七层分析框架 · 四区域覆盖 · 情景推演 · Flash预警</p></div>
