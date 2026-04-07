@@ -1,809 +1,490 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WislicWorld — AI 研究归档</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<title>WislicWorld</title>
 <style>
-  /* ═══════════════════════════════════════════
-     THEME SYSTEM — CSS Variables
-     ═══════════════════════════════════════════ */
-  :root {
-    --font-display: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
-    --font-body: 'Noto Sans SC', 'Plus Jakarta Sans', sans-serif;
-    --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* ── Dark Theme ── */
-  [data-theme="dark"] {
-    --bg-base: #0c1017;
-    --bg-surface: #131922;
-    --bg-elevated: #1a2332;
-    --bg-hover: #1f2b3d;
-    --bg-active: #243044;
-    --border-subtle: #1e2d42;
-    --border-default: #263a54;
-    --border-strong: #2f4a6a;
-    --text-primary: #eaf0f6;
-    --text-secondary: #8899ad;
-    --text-tertiary: #556677;
-    --accent-primary: #e8a830;
-    --accent-primary-bg: rgba(232, 168, 48, 0.10);
-    --accent-primary-border: rgba(232, 168, 48, 0.25);
-    --accent-blue: #4a9eff;
-    --accent-blue-bg: rgba(74, 158, 255, 0.10);
-    --accent-cyan: #22d3ee;
-    --accent-cyan-bg: rgba(34, 211, 238, 0.10);
-    --accent-purple: #a78bfa;
-    --accent-purple-bg: rgba(167, 139, 250, 0.10);
-    --accent-green: #34d399;
-    --accent-green-bg: rgba(52, 211, 153, 0.10);
-    --accent-red: #f87171;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-    --overlay: rgba(0,0,0,0.6);
-  }
-
-  /* ── Light Theme ── */
-  [data-theme="light"] {
-    --bg-base: #f5f6f8;
-    --bg-surface: #ffffff;
-    --bg-elevated: #ffffff;
-    --bg-hover: #f0f2f5;
-    --bg-active: #e8ecf1;
-    --border-subtle: #e5e8ed;
-    --border-default: #d4d9e0;
-    --border-strong: #bcc3cc;
-    --text-primary: #1a2233;
-    --text-secondary: #5a6678;
-    --text-tertiary: #8893a2;
-    --accent-primary: #c48a1a;
-    --accent-primary-bg: rgba(196, 138, 26, 0.08);
-    --accent-primary-border: rgba(196, 138, 26, 0.20);
-    --accent-blue: #2563eb;
-    --accent-blue-bg: rgba(37, 99, 235, 0.06);
-    --accent-cyan: #0891b2;
-    --accent-cyan-bg: rgba(8, 145, 178, 0.06);
-    --accent-purple: #7c3aed;
-    --accent-purple-bg: rgba(124, 58, 237, 0.06);
-    --accent-green: #059669;
-    --accent-green-bg: rgba(5, 150, 105, 0.06);
-    --accent-red: #dc2626;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
-    --overlay: rgba(0,0,0,0.3);
-  }
-
-  /* ═══════════════════════════════════════════
-     RESET & BASE
-     ═══════════════════════════════════════════ */
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: var(--font-body);
-    background: var(--bg-base);
-    color: var(--text-primary);
-    height: 100vh;
-    overflow: hidden;
-    transition: background var(--transition), color var(--transition);
-  }
-
-  /* ═══════════════════════════════════════════
-     HEADER
-     ═══════════════════════════════════════════ */
-  .header {
-    height: 52px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 16px;
-    position: relative;
-    z-index: 50;
-    box-shadow: var(--shadow-sm);
-    transition: background var(--transition), border-color var(--transition);
-  }
-
-  .header-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .brand-mark {
-    width: 30px;
-    height: 30px;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, var(--accent-primary), #d4881a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 15px;
-    color: #fff;
-    letter-spacing: -0.5px;
-  }
-
-  .brand-text {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--text-primary);
-    letter-spacing: -0.3px;
-  }
-
-  .brand-text .sub {
-    font-weight: 400;
-    color: var(--text-tertiary);
-    font-size: 13px;
-    margin-left: 6px;
-  }
-
-  .header-center {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-  }
-
-  .search-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-base);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 6px 14px;
-    width: 420px;
-    max-width: 100%;
-    transition: border-color var(--transition), box-shadow var(--transition);
-  }
-
-  .search-box:focus-within {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px var(--accent-primary-bg);
-  }
-
-  .search-box svg {
-    width: 15px;
-    height: 15px;
-    stroke: var(--text-tertiary);
-    flex-shrink: 0;
-  }
-
-  .search-box input {
-    flex: 1;
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 13px;
-  }
-
-  .search-box input::placeholder { color: var(--text-tertiary); }
-
-  .search-kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-tertiary);
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    padding: 1px 5px;
-    border-radius: 4px;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  .theme-toggle {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    background: var(--bg-base);
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition);
-    font-size: 16px;
-  }
-
-  .theme-toggle:hover {
-    border-color: var(--accent-primary-border);
-    color: var(--accent-primary);
-    background: var(--accent-primary-bg);
-  }
-
-  .header-clock {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-tertiary);
-    min-width: 86px;
-    text-align: right;
-  }
-
-  /* ═══════════════════════════════════════════
-     TOP NAV BAR — Horizontal Category Tabs
-     ═══════════════════════════════════════════ */
-  .topnav {
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 2px;
-    position: relative;
-    z-index: 40;
-    transition: background var(--transition), border-color var(--transition);
-  }
-
-  .topnav-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px 14px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    border-bottom: 2px solid transparent;
-    transition: all var(--transition);
-    user-select: none;
-  }
-
-  .topnav-item:hover {
-    color: var(--text-primary);
-    background: var(--bg-hover);
-  }
-
-  .topnav-item.active {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
-  }
-
-  .topnav-icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-
-  .topnav-icon.ic-all { background: var(--accent-blue-bg); color: var(--accent-blue); }
-  .topnav-icon.ic-daily { background: var(--accent-primary-bg); color: var(--accent-primary); }
-  .topnav-icon.ic-flash { background: var(--accent-cyan-bg); color: var(--accent-cyan); }
-  .topnav-icon.ic-deep { background: var(--accent-purple-bg); color: var(--accent-purple); }
-  .topnav-icon.ic-other { background: var(--accent-green-bg); color: var(--accent-green); }
-
-  .topnav-count {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-tertiary);
-    background: var(--bg-base);
-    padding: 1px 6px;
-    border-radius: 8px;
-    min-width: 20px;
-    text-align: center;
-  }
-
-  .topnav-arrow {
-    font-size: 8px;
-    color: var(--text-tertiary);
-    margin-left: 2px;
-    transition: transform var(--transition);
-  }
-
-  .topnav-item.open .topnav-arrow {
-    transform: rotate(180deg);
-  }
-
-  /* ── Dropdown Menu ── */
-  .dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    min-width: 320px;
-    max-height: 420px;
-    overflow-y: auto;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    padding: 6px;
-    display: none;
-    z-index: 100;
-    margin-top: 2px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-default) transparent;
-  }
-
-  .topnav-item.open .dropdown {
-    display: block;
-    animation: dropIn 0.15s ease;
-  }
-
-  @keyframes dropIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .dropdown-date {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    padding: 8px 10px 4px;
-    position: sticky;
-    top: 0;
-    background: var(--bg-elevated);
-    z-index: 1;
-  }
-
-  .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--transition);
-    font-size: 12.5px;
-    color: var(--text-secondary);
-  }
-
-  .dropdown-item:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-
-  .dropdown-item.active {
-    background: var(--accent-primary-bg);
-    color: var(--accent-primary);
-  }
-
-  .dropdown-tag {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 3px;
-    flex-shrink: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .rt-daily { background: var(--accent-primary-bg); color: var(--accent-primary); }
-  .rt-flash { background: var(--accent-cyan-bg); color: var(--accent-cyan); }
-  .rt-deep { background: var(--accent-purple-bg); color: var(--accent-purple); }
-  .rt-other { background: var(--accent-green-bg); color: var(--accent-green); }
-
-  .dropdown-title {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .dropdown-empty {
-    padding: 20px 16px;
-    text-align: center;
-    color: var(--text-tertiary);
-    font-size: 12px;
-  }
-
-  /* ═══════════════════════════════════════════
-     MAIN LAYOUT (no sidebar)
-     ═══════════════════════════════════════════ */
-  .app-layout {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 52px);
-  }
-
-  /* ═══════════════════════════════════════════
-     CONTENT AREA
-     ═══════════════════════════════════════════ */
-  .content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg-base);
-    transition: background var(--transition);
-  }
-
-  /* Toolbar */
-  .viewer-toolbar {
-    height: 40px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 10px;
-    flex-shrink: 0;
-    transition: background var(--transition), border-color var(--transition);
-  }
-
-  .viewer-breadcrumb {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-tertiary);
-  }
-
-  .viewer-breadcrumb .bc-current { color: var(--text-secondary); font-weight: 500; }
-  .viewer-breadcrumb .bc-sep { margin: 0 6px; color: var(--border-strong); }
-
-  .viewer-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 6px;
-  }
-
-  .v-btn {
-    background: var(--bg-base);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-tertiary);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    padding: 4px 12px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .v-btn:hover {
-    border-color: var(--border-default);
-    color: var(--text-secondary);
-    background: var(--bg-hover);
-  }
-
-  /* iframe viewer */
-  .viewer-frame {
-    flex: 1;
-    background: var(--bg-base);
-  }
-
-  .viewer-frame iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #fff;
-  }
-
-  /* ═══════════════════════════════════════════
-     WELCOME SCREEN
-     ═══════════════════════════════════════════ */
-  .welcome {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-    text-align: center;
-    animation: fadeIn 0.4s ease;
-  }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .welcome-logo {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--accent-primary), #d4881a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 24px;
-    color: #fff;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(232, 168, 48, 0.25);
-  }
-
-  .welcome h1 {
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 6px;
-    letter-spacing: -0.3px;
-  }
-
-  .welcome-sub {
-    font-size: 13.5px;
-    color: var(--text-tertiary);
-    line-height: 1.7;
-    max-width: 420px;
-  }
-
-  .stats-row {
-    display: flex;
-    gap: 40px;
-    margin-top: 32px;
-  }
-
-  .stat-item { text-align: center; }
-
-  .stat-num {
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent-primary);
-    line-height: 1;
-  }
-
-  .stat-lbl {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 6px;
-  }
-
-  /* Setup Guide Card */
-  .guide-card {
-    margin-top: 36px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 20px 24px;
-    text-align: left;
-    max-width: 540px;
-    width: 100%;
-    box-shadow: var(--shadow-sm);
-    transition: background var(--transition), border-color var(--transition);
-  }
-
-  .guide-card h3 {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent-green);
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .guide-card pre {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--text-secondary);
-    line-height: 1.9;
-    white-space: pre-wrap;
-    background: var(--bg-base);
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
-    overflow-x: auto;
-  }
-
-  .guide-card pre .cm { color: var(--text-tertiary); }
-  .guide-card pre .hl { color: var(--accent-primary); }
-  .guide-card pre .st { color: var(--accent-green); }
-
-  /* ═══════════════════════════════════════════
-     SCROLLBAR
-     ═══════════════════════════════════════════ */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
-
-  /* ═══════════════════════════════════════════
-     RESPONSIVE
-     ═══════════════════════════════════════════ */
-  @media (max-width: 860px) {
-    .topnav {
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .topnav::-webkit-scrollbar { display: none; }
-    .topnav-item { white-space: nowrap; flex-shrink: 0; }
-    .search-box { width: 200px; }
-    .brand-text .sub { display: none; }
-    .header-clock { display: none; }
-  }
-
-  @media (max-width: 480px) {
-    .search-box { display: none; }
-    .stats-row { gap: 24px; }
-    .stat-num { font-size: 22px; }
-    .topnav-item { padding: 10px 10px; font-size: 12px; }
-    .topnav-count { display: none; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+:root{
+  --bg:#0a0d12;--bg2:#0f1319;--bg3:#161c26;--bg4:#1c2433;--bg5:#232d3f;
+  --t1:#e4e8f0;--t2:#8d97ab;--t3:#555f75;
+  --acc:#f7a21b;--acc2:#ff8c00;--acc-dim:rgba(247,162,27,.08);--acc-border:rgba(247,162,27,.2);
+  --blue:#3a8fd4;--green:#2eac6e;--red:#d44a4a;--cyan:#2bb5b5;--purple:#a78bfa;
+  --bd:#1e2738;--bd2:#2a3548;
+  --sans:'DM Sans','Noto Sans SC',system-ui,sans-serif;
+  --serif:'Newsreader',Georgia,serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(247,162,27,.2)}
+a{color:inherit;text-decoration:none}
+
+/* ═══ Scrollbar ═══ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+
+/* ═══ Header ═══ */
+.header{background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:200}
+.header-inner{max-width:1360px;margin:0 auto;padding:0 28px;display:flex;align-items:center;height:56px;gap:24px}
+
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer}
+.logo-mark{width:36px;height:36px}
+.logo-mark svg{width:36px;height:36px}
+.logo-text{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.logo-text span{color:var(--acc)}
+
+.search-wrap{flex:1;max-width:520px;position:relative}
+.search-wrap input{width:100%;height:36px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:0 14px 0 36px;font-family:var(--sans);font-size:13px;color:var(--t1);outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--acc-border)}
+.search-wrap input::placeholder{color:var(--t3)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3)}
+.search-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--t3);background:var(--bg4);border:1px solid var(--bd);padding:1px 5px;border-radius:3px}
+
+.header-right{display:flex;align-items:center;gap:16px;margin-left:auto;flex-shrink:0}
+.header-right .time{font-family:var(--mono);font-size:12px;color:var(--t3)}
+.header-right .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2)}
+.header-right .status .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+/* ═══ Nav bar ═══ */
+.nav-bar{background:var(--bg2);border-bottom:1px solid var(--bd);position:sticky;top:56px;z-index:190}
+.nav-inner{max-width:1360px;margin:0 auto;padding:0 28px;display:flex;align-items:center;height:42px;gap:0}
+
+.nav-item{position:relative;height:42px;display:flex;align-items:center}
+.nav-btn{padding:0 18px;height:42px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border:none;background:none;font-family:var(--sans);transition:all .15s;border-bottom:2px solid transparent;white-space:nowrap}
+.nav-btn:hover{color:var(--t1);background:rgba(247,162,27,.03)}
+.nav-btn.active{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-btn .nav-count{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t3);margin-left:2px}
+.nav-btn .arrow{font-size:8px;color:var(--t3);transition:transform .2s}
+.nav-item:hover .arrow{transform:rotate(180deg)}
+
+/* Dropdown */
+.dropdown{position:absolute;top:42px;left:0;min-width:300px;max-height:440px;overflow-y:auto;background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;padding:6px 0;opacity:0;visibility:hidden;transform:translateY(4px);transition:all .2s;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:300;scrollbar-width:thin;scrollbar-color:var(--bd2) transparent}
+.nav-item:hover .dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+
+.dd-date{font-family:var(--mono);font-size:10px;color:var(--t3);padding:8px 18px 4px;position:sticky;top:0;background:var(--bg3);z-index:1}
+.dd-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;color:var(--t2);cursor:pointer;transition:all .15s}
+.dd-item:hover{background:var(--acc-dim);color:var(--t1)}
+.dd-item .dd-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.dd-item .dd-tag{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px}
+.tag-daily{background:rgba(247,162,27,.1);color:var(--acc)}
+.tag-flash{background:rgba(43,181,181,.1);color:var(--cyan)}
+.tag-deep{background:rgba(167,139,250,.1);color:var(--purple)}
+.tag-other{background:rgba(46,172,110,.1);color:var(--green)}
+.dd-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-sep{height:1px;background:var(--bd);margin:4px 0}
+.dd-empty{padding:20px 18px;text-align:center;color:var(--t3);font-size:12px}
+
+/* Static nav dropdown items */
+.dd-item-static{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;color:var(--t2);cursor:pointer;transition:all .15s}
+.dd-item-static:hover{background:var(--acc-dim);color:var(--t1)}
+.dd-item-static .dd-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.dd-item-static .dd-label-tag{margin-left:auto;font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(247,162,27,.1);color:var(--acc);flex-shrink:0}
+
+/* ═══ Ticker ═══ */
+.ticker{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px 20px;margin-bottom:24px;display:flex;gap:24px;overflow-x:auto;align-items:center}
+.ticker::-webkit-scrollbar{display:none}
+.tick{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0}
+.tick-name{font-size:12px;color:var(--t3);font-weight:500}
+.tick-val{font-family:var(--mono);font-size:13px;font-weight:500}
+.tick-chg{font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:3px}
+.tick-chg.up{background:rgba(46,172,110,.1);color:var(--green)}
+.tick-chg.dn{background:rgba(212,74,74,.1);color:var(--red)}
+.tick-sep{width:1px;height:20px;background:var(--bd);flex-shrink:0}
+
+/* ═══ Main Content ═══ */
+.main{max-width:1360px;margin:0 auto;padding:28px 28px 60px}
+
+/* Panel system */
+.panel{display:none;animation:panelIn .35s ease}
+.panel.on{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.panel-hd{margin-bottom:24px}
+.panel-hd h2{font-family:var(--serif);font-size:28px;font-weight:600;margin-bottom:6px}
+.panel-hd p{font-size:14px;color:var(--t2)}
+
+/* Cards */
+.cgrid{display:grid;gap:16px}
+.cg2{grid-template-columns:repeat(2,1fr)}
+.cg3{grid-template-columns:repeat(3,1fr)}
+.cg4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cg3,.cg4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.cg2,.cg3,.cg4{grid-template-columns:1fr}}
+
+.card{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:20px;transition:all .25s;cursor:pointer;position:relative;overflow:hidden}
+.card:hover{border-color:var(--acc-border);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-cat{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--acc);text-transform:uppercase}
+.card-date{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.card h3{font-size:15px;font-weight:600;margin-bottom:8px;line-height:1.4}
+.card p{font-size:12.5px;color:var(--t2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.card-tag{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.04);color:var(--t3);border:1px solid var(--bd)}
+.card-accent{position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .25s}
+.card:hover .card-accent{opacity:1}
+.ca-amber{background:var(--acc)}.ca-blue{background:var(--blue)}.ca-green{background:var(--green)}.ca-red{background:var(--red)}.ca-cyan{background:var(--cyan)}.ca-purple{background:var(--purple)}
+
+/* Featured layout */
+.featured{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:24px}
+.feat-main{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:28px;position:relative;overflow:hidden;cursor:pointer;transition:all .25s}
+.feat-main:hover{border-color:var(--acc-border);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.feat-main .card-cat{margin-bottom:12px}
+.feat-main h2{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:10px;line-height:1.3}
+.feat-main p{font-size:14px;color:var(--t2);line-height:1.7;margin-bottom:14px}
+.feat-main .card-date{font-size:12px}
+.feat-side{display:flex;flex-direction:column;gap:16px}
+.feat-side .card{flex:1}
+@media(max-width:800px){.featured{grid-template-columns:1fr}}
+
+/* Quick links */
+.qlinks{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.ql{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.ql:hover{border-color:var(--acc-border);background:var(--bg4)}
+.ql-icon{font-size:20px;margin-bottom:6px}
+.ql-label{font-size:12px;font-weight:500;color:var(--t2)}
+.ql-count{font-family:var(--mono);font-size:11px;color:var(--t3);margin-top:2px}
+@media(max-width:600px){.qlinks{grid-template-columns:repeat(2,1fr)}}
+
+/* Section bar */
+.sec-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-bar h3{font-size:16px;font-weight:600}
+.sec-bar a{font-size:12px;color:var(--acc);cursor:pointer}
+.sec-bar a:hover{text-decoration:underline}
+
+/* ═══ Viewer (for reading reports) ═══ */
+.viewer-toolbar{height:42px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
+.viewer-breadcrumb{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.viewer-breadcrumb .bc-current{color:var(--t2);font-weight:500}
+.viewer-breadcrumb .bc-sep{margin:0 6px;color:var(--bd2)}
+.viewer-actions{margin-left:auto;display:flex;gap:6px}
+.v-btn{background:var(--bg3);border:1px solid var(--bd);color:var(--t3);font-family:var(--mono);font-size:11px;padding:5px 14px;border-radius:6px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.v-btn:hover{border-color:var(--acc-border);color:var(--t2);background:var(--bg4)}
+
+.viewer-frame{flex:1;background:var(--bg)}
+.viewer-frame iframe{width:100%;height:100%;border:none;background:#fff}
+
+#viewerPanel{display:none;position:fixed;top:98px;left:0;right:0;bottom:0;z-index:100;flex-direction:column;background:var(--bg)}
+
+/* Footer */
+.footer{border-top:1px solid var(--bd);padding:28px;text-align:center;margin-top:40px}
+.footer p{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:.5px}
+
+/* ═══ Responsive ═══ */
+@media(max-width:860px){
+  .nav-inner{overflow-x:auto;scrollbar-width:none}
+  .nav-inner::-webkit-scrollbar{display:none}
+  .nav-item{flex-shrink:0}
+  .search-wrap{max-width:280px}
+  .header-right .status{display:none}
+}
+@media(max-width:480px){
+  .search-wrap{display:none}
+  .nav-btn{padding:0 12px;font-size:12px}
+  .nav-btn .nav-count{display:none}
+}
 </style>
 </head>
 <body>
 
 <!-- ═══ HEADER ═══ -->
-<header class="header">
-  <div class="header-brand">
-    <div class="brand-mark">W</div>
-    <div class="brand-text">WislicWorld<span class="sub">研究归档</span></div>
-  </div>
+<div class="header">
+  <div class="header-inner">
+    <div class="logo" onclick="showPanel('home')">
+      <div class="logo-mark">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="4" fill="#f7a21b"/>
+          <path d="M6 10L10.5 26H11.5L15 16L18.5 26H19.5L24 10H22L18.5 22L15 12H15L11.5 22L8 10H6Z" fill="#0a0d12" stroke="#0a0d12" stroke-width="0.5" stroke-linejoin="round"/>
+          <rect x="25" y="23" width="3" height="3" rx="0.5" fill="#0a0d12"/>
+        </svg>
+      </div>
+      <div class="logo-text">Wislic<span>World</span></div>
+    </div>
 
-  <div class="header-center">
-    <div class="search-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="搜索报告..." id="searchInput" oninput="handleSearch(this.value)">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="搜索研报、数据、分析框架..." id="searchInput" oninput="handleSearch(this.value)">
       <span class="search-kbd">⌘K</span>
     </div>
-  </div>
 
-  <div class="header-actions">
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
-    <span class="header-clock" id="clock"></span>
+    <div class="header-right">
+      <div class="time" id="clock"></div>
+      <div class="status"><span class="dot"></span>系统运行中</div>
+    </div>
   </div>
-</header>
+</div>
 
-<!-- ═══ TOP NAV BAR ═══ -->
-<nav class="topnav" id="topnav">
-  <div class="topnav-item active" data-cat="all" onclick="handleNavClick('all', this, event)">
-    <span class="topnav-icon ic-all">▦</span>
-    全部报告
-    <span class="topnav-count" id="cnt-all">0</span>
-    <span class="topnav-arrow">▼</span>
-    <div class="dropdown" id="drop-all"></div>
-  </div>
-  <div class="topnav-item" data-cat="daily" onclick="handleNavClick('daily', this, event)">
-    <span class="topnav-icon ic-daily">D</span>
-    宏观日报
-    <span class="topnav-count" id="cnt-daily">0</span>
-    <span class="topnav-arrow">▼</span>
-    <div class="dropdown" id="drop-daily"></div>
-  </div>
-  <div class="topnav-item" data-cat="flash" onclick="handleNavClick('flash', this, event)">
-    <span class="topnav-icon ic-flash">F</span>
-    盘中速览
-    <span class="topnav-count" id="cnt-flash">0</span>
-    <span class="topnav-arrow">▼</span>
-    <div class="dropdown" id="drop-flash"></div>
-  </div>
-  <div class="topnav-item" data-cat="deep" onclick="handleNavClick('deep', this, event)">
-    <span class="topnav-icon ic-deep">R</span>
-    专题研究
-    <span class="topnav-count" id="cnt-deep">0</span>
-    <span class="topnav-arrow">▼</span>
-    <div class="dropdown" id="drop-deep"></div>
-  </div>
-  <div class="topnav-item" data-cat="other" onclick="handleNavClick('other', this, event)">
-    <span class="topnav-icon ic-other">+</span>
-    其他
-    <span class="topnav-count" id="cnt-other">0</span>
-    <span class="topnav-arrow">▼</span>
-    <div class="dropdown" id="drop-other"></div>
-  </div>
-</nav>
+<!-- ═══ NAV BAR ═══ -->
+<div class="nav-bar">
+  <div class="nav-inner">
 
-<!-- ═══ MAIN LAYOUT ═══ -->
-<div class="app-layout">
-  <main class="content" id="mainContent">
+    <div class="nav-item">
+      <button class="nav-btn active" onclick="showPanel('home')">首页</button>
+    </div>
 
-    <!-- Welcome Screen -->
-    <div class="welcome" id="welcomeScreen">
-      <div class="welcome-logo">W</div>
-      <h1>WislicWorld</h1>
-      <p class="welcome-sub">
-        集中归档与浏览 Claude 生成的 AI 研究报告。<br>
-        点击顶部分类标签展开下拉菜单，选择报告阅读。
-      </p>
-      <div class="stats-row">
-        <div class="stat-item">
-          <div class="stat-num" id="st-total">0</div>
-          <div class="stat-lbl">总报告</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" id="st-cats">5</div>
-          <div class="stat-lbl">分类</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" id="st-latest">—</div>
-          <div class="stat-lbl">最新</div>
-        </div>
-      </div>
-
-      <div class="guide-card">
-        <h3>▸ 快速上手</h3>
-        <pre><span class="cm">// 1. 在 reports.json 中注册新报告</span>
-{
-  <span class="hl">"title"</span>: <span class="st">"宏观日报 2026-03-29"</span>,
-  <span class="hl">"category"</span>: <span class="st">"daily"</span>,
-  <span class="hl">"date"</span>: <span class="st">"2026-03-29"</span>,
-  <span class="hl">"file"</span>: <span class="st">"reports/daily/2026-03-29.html"</span>
-}
-
-<span class="cm">// 2. HTML 文件放入对应文件夹</span>
-<span class="cm">//    reports/daily/  宏观日报</span>
-<span class="cm">//    reports/flash/  盘中速览</span>
-<span class="cm">//    reports/deep/   专题研究</span>
-<span class="cm">//    reports/other/  其他报告</span>
-
-<span class="cm">// 3. git add → git commit → git push</span>
-<span class="cm">//    GitHub Pages 自动更新</span></pre>
+    <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('macro')">宏观研究 <span class="arrow">▾</span></button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">◈</span>五层宏观框架</div>
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">◉</span>周期定位系统</div>
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">◎</span>领先指标体系</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">▣</span>中国宏观专题<span class="dd-label-tag">核心</span></div>
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">▤</span>美国经济追踪</div>
+        <div class="dd-item-static" onclick="showPanel('macro')"><span class="dd-icon">▥</span>全球经济地图</div>
       </div>
     </div>
 
-    <!-- Viewer (hidden) -->
-    <div id="viewer" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
-      <div class="viewer-toolbar">
-        <div class="viewer-breadcrumb">
-          <span id="bc-cat">全部</span>
-          <span class="bc-sep">/</span>
-          <span class="bc-current" id="bc-title">—</span>
-        </div>
-        <div class="viewer-actions">
-          <button class="v-btn" onclick="openNew()">↗ 新窗口</button>
-          <button class="v-btn" onclick="closeViewer()">✕ 关闭</button>
-        </div>
-      </div>
-      <div class="viewer-frame">
-        <iframe id="viewerFrame" sandbox="allow-same-origin allow-scripts"></iframe>
+    <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('geoint')">地缘情报 <span class="arrow">▾</span></button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">◆</span>地缘风险仪表盘<span class="dd-label-tag">LIVE</span></div>
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">◇</span>情景推演系统</div>
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">▸</span>Flash预警</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">●</span>美伊战争追踪<span class="dd-label-tag">HOT</span></div>
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">○</span>中美博弈</div>
+        <div class="dd-item-static" onclick="showPanel('geoint')"><span class="dd-icon">○</span>俄乌冲突</div>
       </div>
     </div>
-  </main>
+
+    <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('market')">市场策略 <span class="arrow">▾</span></button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">▦</span>跨资产地图</div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">▧</span>行业轮动追踪</div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">▨</span>信用利差监控</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">◐</span>利率债策略</div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">◑</span>信用债策略</div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">◒</span>可转债策略</div>
+        <div class="dd-item-static" onclick="showPanel('market')"><span class="dd-icon">◓</span>权益主题</div>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('risk')">风控系统 <span class="arrow">▾</span></button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('risk')"><span class="dd-icon">⬡</span>组合风险面板</div>
+        <div class="dd-item-static" onclick="showPanel('risk')"><span class="dd-icon">⬢</span>压力测试</div>
+        <div class="dd-item-static" onclick="showPanel('risk')"><span class="dd-icon">⚠</span>止损监控</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('risk')"><span class="dd-icon">◈</span>遗憾矩阵</div>
+        <div class="dd-item-static" onclick="showPanel('risk')"><span class="dd-icon">◇</span>VaR/CVaR</div>
+      </div>
+    </div>
+
+    <div class="nav-item" id="navReports">
+      <button class="nav-btn" onclick="showPanel('reports')">研报中心 <span class="nav-count" id="cnt-all">0</span> <span class="arrow">▾</span></button>
+      <div class="dropdown" id="dropReports"></div>
+    </div>
+
+    <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('system')">体系管理 <span class="arrow">▾</span></button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">⟐</span>v5.0架构概览</div>
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">⟳</span>五维特性评估</div>
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">▸</span>提示词系统</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">◆</span>Brier Score追踪</div>
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">◇</span>历史类比库</div>
+        <div class="dd-item-static" onclick="showPanel('system')"><span class="dd-icon">○</span>版本日志</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<div class="main" id="mainContent">
+
+  <!-- Ticker -->
+  <div class="ticker" id="ticker">
+    <div class="tick"><span class="tick-name">上证</span><span class="tick-val">3,342.01</span><span class="tick-chg up">+0.83%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">10Y国债</span><span class="tick-val">1.815%</span><span class="tick-chg dn">-2.1bp</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">Brent</span><span class="tick-val">$71.34</span><span class="tick-chg dn">-1.22%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">XAU</span><span class="tick-val">$3,024</span><span class="tick-chg up">+0.45%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">DXY</span><span class="tick-val">103.2</span><span class="tick-chg up">+0.18%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">VIX</span><span class="tick-val">18.7</span><span class="tick-chg dn">-3.2%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">USDCNH</span><span class="tick-val">7.278</span><span class="tick-chg dn">-0.06%</span></div>
+    <div class="tick-sep"></div>
+    <div class="tick"><span class="tick-name">模式</span><span class="tick-val" style="color:var(--green)">NORMAL</span></div>
+  </div>
+
+  <!-- ═══ HOME PANEL ═══ -->
+  <div class="panel on" id="p-home">
+    <div class="featured">
+      <div class="feat-main" id="featMain">
+        <div class="card-accent ca-amber" style="opacity:1"></div>
+        <div class="card-cat">周度研判 · W15</div>
+        <h2>中美周期背离进入兑现期：二季度配置路线图</h2>
+        <p>中国PPI降幅收窄至-1.2%，基钦周期补库存信号强化。美国Core PCE连续三个月超预期，联储降息窗口后移至Q3。利率债久期建议拉长至4.5Y，权益超配科技AI+出海制造。</p>
+        <div class="card-date">2026-04-07 · CIO综合研判</div>
+      </div>
+      <div class="feat-side">
+        <div class="card" id="featSide1">
+          <div class="card-accent ca-red"></div>
+          <div class="card-top"><span class="card-cat" style="color:var(--red)">FLASH</span><span class="card-date">04-06</span></div>
+          <h3>美伊停火谈判延期至4月20日，油价短线波动加剧</h3>
+          <p>市场初步消化延期预期，Brent回落至$71，但霍尔木兹海峡通行量仍低于正常水平30%。</p>
+        </div>
+        <div class="card" id="featSide2">
+          <div class="card-accent ca-blue"></div>
+          <div class="card-top"><span class="card-cat">数据速递</span><span class="card-date">04-07</span></div>
+          <h3>3月PMI录得50.8，连续第二个月站上荣枯线</h3>
+          <p>新订单-库存差值转正，确认被动补库存阶段。结构上中小企业PMI仍在49下方。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="qlinks">
+      <div class="ql" onclick="showPanel('macro')"><div class="ql-icon">◈</div><div class="ql-label">宏观框架</div><div class="ql-count">5层 · 36指标</div></div>
+      <div class="ql" onclick="showPanel('geoint')"><div class="ql-icon">◆</div><div class="ql-label">地缘情报</div><div class="ql-count">4区域 · 实时</div></div>
+      <div class="ql" onclick="showPanel('reports')"><div class="ql-icon">▤</div><div class="ql-label">研报中心</div><div class="ql-count" id="ql-report-count">加载中</div></div>
+      <div class="ql" onclick="showPanel('system')"><div class="ql-icon">⟐</div><div class="ql-label">体系 v5.0</div><div class="ql-count">4层 · 5角色</div></div>
+    </div>
+
+    <!-- Latest reports (dynamic) -->
+    <div class="sec-bar"><h3>最新研报</h3><a onclick="showPanel('reports')">查看全部 →</a></div>
+    <div class="cgrid cg3" id="latestCards" style="margin-bottom:28px"></div>
+
+    <!-- Geopolitical -->
+    <div class="sec-bar"><h3>地缘动态</h3><a onclick="showPanel('geoint')">进入情报台 →</a></div>
+    <div class="cgrid cg2" style="margin-bottom:28px">
+      <div class="card"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat" style="color:var(--red)">🔴 AMBER</span><span class="card-date">04-07</span></div><h3>美伊战争第38天：谈判马拉松与能源市场再平衡</h3><p>第三次延期后市场risk premium已部分释放，但Kharg Island打击风险仍存。概率更新：快速停火20%→谈判消耗35%→持续升级25%。</p></div>
+      <div class="card"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat">地缘</span><span class="card-date">04-05</span></div><h3>Trump访华信号解读：Grand Bargain还是分而治之？</h3><p>中美首脑会谈可能将伊朗停火、稀土供应、关税削减打包谈判。CRI战略三角博弈进入新阶段。</p></div>
+    </div>
+
+    <!-- Market strategy -->
+    <div class="sec-bar"><h3>市场策略</h3><a onclick="showPanel('market')">查看全部 →</a></div>
+    <div class="cgrid cg4">
+      <div class="card"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat">利率</span></div><h3>久期拉长至4.5Y</h3><p>经济弱复苏+降息预期→收益率下行空间打开</p></div>
+      <div class="card"><div class="card-accent ca-green"></div><div class="card-top"><span class="card-cat">信用</span></div><h3>AA+下沉至3Y</h3><p>利差处于历史25分位，化债推进降低尾部风险</p></div>
+      <div class="card"><div class="card-accent ca-amber"></div><div class="card-top"><span class="card-cat">转债</span></div><h3>增配平衡型</h3><p>估值水位中性，正股联动度回升，关注科技标的</p></div>
+      <div class="card"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat">权益</span></div><h3>科技AI + 出海</h3><p>AI算力扩张期+制造业出海红利，双主线超配</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ MACRO PANEL ═══ -->
+  <div class="panel" id="p-macro">
+    <div class="panel-hd"><h2>宏观研究</h2><p>五层宏观分析框架 · 三阶九周期系统 · 36项领先指标</p></div>
+    <div class="cgrid cg3">
+      <div class="card"><div class="card-accent ca-amber"></div><h3>第一层：经济周期定位</h3><p>全球主要经济体所处的周期阶段和趋势方向，中美周期背离状态实时监控。</p></div>
+      <div class="card"><div class="card-accent ca-blue"></div><h3>第二层：政策传导效率</h3><p>中国货币/财政政策传导链分析，政策响应阻尼系数校准（0.1-0.3）。</p></div>
+      <div class="card"><div class="card-accent ca-green"></div><h3>第三层：资产映射</h3><p>从周期位置和政策方向映射到利率债/信用/转债/权益的含义。</p></div>
+      <div class="card"><div class="card-accent ca-cyan"></div><h3>基钦周期追踪</h3><p>当前阶段：被动补库存（80%置信度）。PPI降幅收窄+新订单-库存差值转正。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">看多</span></div></div>
+      <div class="card"><div class="card-accent ca-amber"></div><h3>朱格拉周期追踪</h3><p>设备投资增速回落至5.8%，产能利用率74.2%。资本开支周期上半场尾声。</p><div class="card-tags"><span class="card-tag" style="background:rgba(247,162,27,.1);color:var(--acc)">中性</span></div></div>
+      <div class="card"><div class="card-accent ca-red"></div><h3>库兹涅茨追踪</h3><p>房价-18%同比，新开工持续深跌。房地产周期仍在L型底部磨底。</p><div class="card-tags"><span class="card-tag" style="background:rgba(212,74,74,.1);color:var(--red)">看空</span></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ GEOINT PANEL ═══ -->
+  <div class="panel" id="p-geoint">
+    <div class="panel-hd"><h2>地缘情报</h2><p>七层分析框架 · 四区域覆盖 · 情景推演 · Flash预警</p></div>
+    <div class="cgrid cg2">
+      <div class="card"><div class="card-accent ca-red"></div><div class="card-top"><span class="card-cat" style="color:var(--red)">AMBER</span></div><h3>中东/能源 — 美伊战争第38天</h3><p>核心情景：谈判消耗（35%）。4/20新deadline前市场维持高波动。Kharg Island打击仍是tail risk。</p></div>
+      <div class="card"><div class="card-accent ca-amber"></div><div class="card-top"><span class="card-cat" style="color:var(--acc)">YELLOW</span></div><h3>中美关系 — Trump访华</h3><p>Grand Bargain概率12%。更可能是分议题谈判：稀土先行，关税随后。</p></div>
+      <div class="card"><div class="card-accent ca-blue"></div><div class="card-top"><span class="card-cat">YELLOW</span></div><h3>俄乌冲突 — 冻结态</h3><p>前线变化极小，欧洲天然气库存充裕。风险降级。</p></div>
+      <div class="card"><div class="card-accent ca-green"></div><div class="card-top"><span class="card-cat" style="color:var(--green)">GREEN</span></div><h3>亚太安全 — 低风险期</h3><p>台海军事活动处于低频状态，南海相对平静。持续监控。</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ MARKET PANEL ═══ -->
+  <div class="panel" id="p-market">
+    <div class="panel-hd"><h2>市场策略</h2><p>跨资产配置 · 行业轮动 · 固收+组合管理</p></div>
+    <div class="cgrid cg2">
+      <div class="card"><div class="card-accent ca-blue"></div><h3>固收策略：久期进攻</h3><p>10Y国债1.815%仍有下行空间。利差历史25分位支撑信用下沉至AA+ 3Y。可转债估值中性，增配平衡型。</p></div>
+      <div class="card"><div class="card-accent ca-amber"></div><h3>权益策略：双主线</h3><p>科技AI（算力扩张+端侧落地）15%配置。出海制造（东南亚产能转移红利）10%配置。合计权益25%。</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ RISK PANEL ═══ -->
+  <div class="panel" id="p-risk">
+    <div class="panel-hd"><h2>风控系统</h2><p>组合风险监控 · 压力测试 · 认知止损</p></div>
+    <div class="cgrid cg3">
+      <div class="card"><div class="card-accent ca-green"></div><h3>组合状态：正常</h3><p>VIX 18.7 → NORMAL模式。所有限额合规。月度回撤-1.2%，远离-8%警戒线。</p></div>
+      <div class="card"><div class="card-accent ca-blue"></div><h3>压力测试</h3><p>利率+50bp → P&L -2.3%<br>权益-15% → P&L -3.8%<br>VIX>35 → P&L -5.1%</p></div>
+      <div class="card"><div class="card-accent ca-amber"></div><h3>认知止损检查</h3><p>当前无判断触发止损条件。最近一次修正：3/28下调黄金仓位。</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ REPORTS PANEL (dynamic) ═══ -->
+  <div class="panel" id="p-reports">
+    <div class="panel-hd"><h2>研报中心</h2><p>宏观日报 · 盘中速览 · 专题研究 · 归档浏览</p></div>
+
+    <!-- Category filter chips -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="reportFilters">
+      <button class="v-btn" style="font-size:12px" data-filter="all" onclick="filterReports('all',this)">全部</button>
+      <button class="v-btn" style="font-size:12px" data-filter="daily" onclick="filterReports('daily',this)">宏观日报</button>
+      <button class="v-btn" style="font-size:12px" data-filter="flash" onclick="filterReports('flash',this)">盘中速览</button>
+      <button class="v-btn" style="font-size:12px" data-filter="deep" onclick="filterReports('deep',this)">专题研究</button>
+      <button class="v-btn" style="font-size:12px" data-filter="other" onclick="filterReports('other',this)">其他</button>
+    </div>
+
+    <div class="cgrid cg3" id="reportCards"></div>
+  </div>
+
+  <!-- ═══ SYSTEM PANEL ═══ -->
+  <div class="panel" id="p-system">
+    <div class="panel-hd"><h2>体系管理</h2><p>v5.0精简架构 · 四层闭环 · 五角色 · 四提示词</p></div>
+    <div class="cgrid cg2">
+      <div class="card"><div class="card-accent ca-amber"></div><h3>v5.0 架构总览</h3><p>四层闭环（感知→研判→执行→复盘）。五角色（CIO/宏观/市场/量化风控/Red Team）。14条决策规则内嵌。</p><div class="card-tags"><span class="card-tag" style="background:rgba(46,172,110,.1);color:var(--green)">当前版本</span></div></div>
+      <div class="card"><div class="card-accent ca-blue"></div><h3>提示词系统</h3><p>S1系统设定（常驻）+ W1周度研判 + W2紧急预警 + W3月度复盘。四条提示词覆盖全场景。</p></div>
+      <div class="card"><div class="card-accent ca-cyan"></div><h3>五维特性评估</h3><p>迭代性82 / 先进性88 / 完整性85 / 协同性78 / 数据质量80。总分82.6/100。</p></div>
+      <div class="card"><div class="card-accent ca-green"></div><h3>预测校准追踪</h3><p>月均Brier Score 0.18（目标&lt;0.15）。宏观判断准确率72%，地缘判断准确率65%。</p></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>WislicWorld v1.0 · AI Investment Research Portal</p>
+    <p style="margin-top:4px;opacity:.5">Powered by Claude · April 2026</p>
+  </div>
+</div>
+
+<!-- ═══ VIEWER OVERLAY ═══ -->
+<div id="viewerPanel">
+  <div class="viewer-toolbar">
+    <div class="viewer-breadcrumb">
+      <span id="bc-cat">研报中心</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current" id="bc-title">—</span>
+    </div>
+    <div class="viewer-actions">
+      <button class="v-btn" onclick="openNewTab()">↗ 新窗口</button>
+      <button class="v-btn" onclick="closeViewer()">✕ 关闭</button>
+    </div>
+  </div>
+  <div class="viewer-frame" style="flex:1">
+    <iframe id="viewerFrame" sandbox="allow-same-origin allow-scripts"></iframe>
+  </div>
 </div>
 
 <!-- ═══ SCRIPTS ═══ -->
 <script>
 /* ══════════════════════════════════════════════
-   CATEGORY REGISTRY — Easy to extend
+   CATEGORY CONFIG
    ══════════════════════════════════════════════ */
 const CATEGORIES = {
-  daily: { label: '日报', tagClass: 'rt-daily', breadcrumb: '宏观日报' },
-  flash: { label: '速览', tagClass: 'rt-flash', breadcrumb: '盘中速览' },
-  deep:  { label: '专题', tagClass: 'rt-deep',  breadcrumb: '专题研究' },
-  other: { label: '其他', tagClass: 'rt-other', breadcrumb: '其他' },
+  daily: { label: '日报', accent: 'ca-amber', tagClass: 'tag-daily', breadcrumb: '宏观日报' },
+  flash: { label: '速览', accent: 'ca-cyan', tagClass: 'tag-flash', breadcrumb: '盘中速览' },
+  deep:  { label: '专题', accent: 'ca-purple', tagClass: 'tag-deep', breadcrumb: '专题研究' },
+  other: { label: '其他', accent: 'ca-green', tagClass: 'tag-other', breadcrumb: '其他' },
 };
 
 let reports = [];
-let activeCat = 'all';
 let activeFile = null;
-
-/* ── Theme ── */
-function getTheme() {
-  return localStorage.getItem('wislic-theme') || 'dark';
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
-  localStorage.setItem('wislic-theme', theme);
-}
-
-function toggleTheme() {
-  applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
-}
+let currentFilter = 'all';
 
 /* ── Load Reports ── */
 async function loadReports() {
@@ -812,7 +493,6 @@ async function loadReports() {
     const data = await res.json();
     reports = data.reports.sort((a, b) => b.date.localeCompare(a.date));
   } catch {
-    // Demo fallback
     reports = [
       { title: '宏观日报 2026-03-29', category: 'daily', date: '2026-03-29', file: 'reports/daily/2026-03-29.html' },
       { title: '宏观日报 2026-03-28', category: 'daily', date: '2026-03-28', file: 'reports/daily/2026-03-28.html' },
@@ -822,176 +502,227 @@ async function loadReports() {
       { title: '滞胀环境资产配置框架', category: 'deep', date: '2026-03-20', file: 'reports/deep/stagflation-framework.html' },
     ];
   }
-  refreshUI();
+  buildUI();
 }
 
-/* ── Refresh UI ── */
-function refreshUI() {
-  const counts = { all: reports.length, daily: 0, flash: 0, deep: 0, other: 0 };
-  reports.forEach(r => { if (counts[r.category] !== undefined) counts[r.category]++; });
+/* ── Build UI from report data ── */
+function buildUI() {
+  // Update counts
+  document.getElementById('cnt-all').textContent = reports.length;
+  document.getElementById('ql-report-count').textContent = reports.length + '篇归档';
 
-  Object.keys(counts).forEach(k => {
-    const el = document.getElementById('cnt-' + k);
-    if (el) el.textContent = counts[k];
+  // Build nav dropdown for "研报中心"
+  buildNavDropdown();
+
+  // Build latest cards on home
+  buildLatestCards();
+
+  // Build reports panel
+  renderReportCards();
+}
+
+/* ── Nav dropdown with reports grouped by date ── */
+function buildNavDropdown() {
+  const container = document.getElementById('dropReports');
+  container.innerHTML = '';
+
+  // Category sub-items first
+  const cats = [
+    { label: '宏观日报', cat: 'daily', icon: '▤' },
+    { label: '盘中速览', cat: 'flash', icon: '▥' },
+    { label: '专题研究', cat: 'deep', icon: '▦' },
+  ];
+  cats.forEach(c => {
+    const count = reports.filter(r => r.category === c.cat).length;
+    const el = document.createElement('div');
+    el.className = 'dd-item-static';
+    el.innerHTML = `<span class="dd-icon">${c.icon}</span>${c.label}<span class="dd-label-tag">${count}</span>`;
+    el.onclick = () => { showPanel('reports'); filterReports(c.cat, document.querySelector(`[data-filter="${c.cat}"]`)); };
+    container.appendChild(el);
   });
 
-  document.getElementById('st-total').textContent = reports.length;
-  if (reports.length > 0) {
-    document.getElementById('st-latest').textContent = reports[0].date.slice(5);
-  }
+  const sep = document.createElement('div');
+  sep.className = 'dd-sep';
+  container.appendChild(sep);
 
-  renderDropdowns();
-}
-
-/* ── Render Dropdown Menus ── */
-function renderDropdowns(searchQuery) {
-  const cats = ['all', 'daily', 'flash', 'deep', 'other'];
-
-  cats.forEach(cat => {
-    let filtered = cat === 'all' ? [...reports] : reports.filter(r => r.category === cat);
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(r =>
-        r.title.toLowerCase().includes(q) ||
-        r.date.includes(q) ||
-        (CATEGORIES[r.category]?.label || '').includes(q)
-      );
+  // Recent reports
+  const recent = reports.slice(0, 8);
+  let lastDate = '';
+  recent.forEach(report => {
+    if (report.date !== lastDate) {
+      lastDate = report.date;
+      const dl = document.createElement('div');
+      dl.className = 'dd-date';
+      dl.textContent = report.date;
+      container.appendChild(dl);
     }
-
-    // Group by date
-    const groups = {};
-    filtered.forEach(r => {
-      if (!groups[r.date]) groups[r.date] = [];
-      groups[r.date].push(r);
-    });
-
-    const container = document.getElementById('drop-' + cat);
-    container.innerHTML = '';
-
-    const dates = Object.keys(groups).sort().reverse();
-
-    if (dates.length === 0) {
-      container.innerHTML = '<div class="dropdown-empty">暂无匹配报告</div>';
-      return;
-    }
-
-    dates.forEach(date => {
-      const lbl = document.createElement('div');
-      lbl.className = 'dropdown-date';
-      lbl.textContent = date;
-      container.appendChild(lbl);
-
-      groups[date].forEach(report => {
-        const item = document.createElement('div');
-        item.className = 'dropdown-item' + (activeFile === report.file ? ' active' : '');
-        const catInfo = CATEGORIES[report.category] || CATEGORIES.other;
-        item.innerHTML = `<span class="dropdown-tag ${catInfo.tagClass}">${catInfo.label}</span><span class="dropdown-title">${report.title}</span>`;
-        item.onclick = (e) => {
-          e.stopPropagation();
-          openReport(report);
-        };
-        container.appendChild(item);
-      });
-    });
+    const cat = CATEGORIES[report.category] || CATEGORIES.other;
+    const item = document.createElement('div');
+    item.className = 'dd-item';
+    item.innerHTML = `<span class="dd-tag ${cat.tagClass}">${cat.label}</span><span class="dd-title">${report.title}</span>`;
+    item.onclick = () => openReport(report);
+    container.appendChild(item);
   });
 }
 
-/* ── Nav Click — toggle dropdown ── */
-function handleNavClick(cat, el, event) {
-  // Prevent click from propagating to document (which closes dropdowns)
-  event.stopPropagation();
+/* ── Latest report cards on home ── */
+function buildLatestCards() {
+  const container = document.getElementById('latestCards');
+  container.innerHTML = '';
+  const latest = reports.slice(0, 6);
 
-  const wasOpen = el.classList.contains('open');
+  latest.forEach(report => {
+    const cat = CATEGORIES[report.category] || CATEGORIES.other;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-accent ${cat.accent}"></div>
+      <div class="card-top">
+        <span class="card-cat">${cat.label}</span>
+        <span class="card-date">${report.date}</span>
+      </div>
+      <h3>${report.title}</h3>
+      <p>点击查看完整报告内容</p>
+    `;
+    card.onclick = () => openReport(report);
+    container.appendChild(card);
+  });
 
-  // Close all dropdowns
-  document.querySelectorAll('.topnav-item').forEach(n => n.classList.remove('open'));
-
-  // Set active category
-  activeCat = cat;
-  document.querySelectorAll('.topnav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
-
-  // Toggle dropdown
-  if (!wasOpen) {
-    el.classList.add('open');
+  if (latest.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)">暂无报告，请在 reports.json 中添加</div>';
   }
-
-  // Re-render dropdowns with current search
-  renderDropdowns(document.getElementById('searchInput').value);
 }
 
-/* ── Close dropdowns on outside click ── */
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.topnav-item')) {
-    document.querySelectorAll('.topnav-item').forEach(n => n.classList.remove('open'));
-  }
-});
+/* ── Reports panel cards ── */
+function renderReportCards(filter) {
+  filter = filter || currentFilter;
+  const container = document.getElementById('reportCards');
+  container.innerHTML = '';
 
-/* ── Search ── */
-function handleSearch(val) {
-  renderDropdowns(val);
+  const filtered = filter === 'all' ? [...reports] : reports.filter(r => r.category === filter);
+
+  // Search filter
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const final = query ? filtered.filter(r =>
+    r.title.toLowerCase().includes(query) ||
+    r.date.includes(query) ||
+    (CATEGORIES[r.category]?.label || '').includes(query)
+  ) : filtered;
+
+  final.forEach(report => {
+    const cat = CATEGORIES[report.category] || CATEGORIES.other;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-accent ${cat.accent}"></div>
+      <div class="card-top">
+        <span class="card-cat">${cat.label}</span>
+        <span class="card-date">${report.date}</span>
+      </div>
+      <h3>${report.title}</h3>
+      <p>点击查看完整报告内容</p>
+    `;
+    card.onclick = () => openReport(report);
+    container.appendChild(card);
+  });
+
+  if (final.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)">暂无匹配报告</div>';
+  }
 }
 
-/* ── Open Report ── */
+function filterReports(cat, el) {
+  currentFilter = cat;
+  document.querySelectorAll('#reportFilters .v-btn').forEach(b => {
+    b.style.borderColor = '';
+    b.style.color = '';
+  });
+  if (el) {
+    el.style.borderColor = 'var(--acc-border)';
+    el.style.color = 'var(--acc)';
+  }
+  renderReportCards(cat);
+}
+
+/* ── Panel switching ── */
+function showPanel(id) {
+  closeViewer();
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  const panel = document.getElementById('p-' + id);
+  if (panel) panel.classList.add('on');
+
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const map = { home: 0, macro: 1, geoint: 2, market: 3, risk: 4, reports: 5, system: 6 };
+  if (map[id] !== undefined) document.querySelectorAll('.nav-btn')[map[id]].classList.add('active');
+
+  document.getElementById('mainContent').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Open report in viewer ── */
 function openReport(report) {
   activeFile = report.file;
   const cat = CATEGORIES[report.category] || CATEGORIES.other;
-
-  document.getElementById('welcomeScreen').style.display = 'none';
-  const viewer = document.getElementById('viewer');
-  viewer.style.display = 'flex';
 
   document.getElementById('bc-cat').textContent = cat.breadcrumb;
   document.getElementById('bc-title').textContent = report.title;
   document.getElementById('viewerFrame').src = report.file;
 
-  // Close all dropdowns
-  document.querySelectorAll('.topnav-item').forEach(n => n.classList.remove('open'));
-
-  renderDropdowns(document.getElementById('searchInput').value);
+  const vp = document.getElementById('viewerPanel');
+  vp.style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'none';
 }
 
-/* ── Open New Tab ── */
-function openNew() {
+function openNewTab() {
   if (activeFile) window.open(activeFile, '_blank');
 }
 
-/* ── Close Viewer ── */
 function closeViewer() {
   activeFile = null;
-  document.getElementById('viewer').style.display = 'none';
-  document.getElementById('welcomeScreen').style.display = 'flex';
+  const vp = document.getElementById('viewerPanel');
+  vp.style.display = 'none';
   document.getElementById('viewerFrame').src = '';
-  renderDropdowns();
+  document.getElementById('mainContent').style.display = '';
+}
+
+/* ── Search ── */
+function handleSearch(val) {
+  // If on reports panel, filter dynamically
+  if (document.getElementById('p-reports').classList.contains('on')) {
+    renderReportCards();
+  }
+  // Also filter nav dropdown
+  buildNavDropdown();
 }
 
 /* ── Clock ── */
-function tickClock() {
+function updateClock() {
   const now = new Date();
-  const s = now.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
-    + ' ' + now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('clock').textContent = s;
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('clock').textContent = h + ':' + m + ':' + s + ' CST';
 }
+setInterval(updateClock, 1000);
+updateClock();
 
-/* ── Keyboard Shortcuts ── */
+/* ── Keyboard shortcuts ── */
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
     document.getElementById('searchInput').focus();
   }
   if (e.key === 'Escape') {
-    document.getElementById('searchInput').blur();
-    document.querySelectorAll('.topnav-item').forEach(n => n.classList.remove('open'));
     if (activeFile) closeViewer();
+    document.getElementById('searchInput').blur();
   }
 });
 
 /* ── Init ── */
-applyTheme(getTheme());
-tickClock();
-setInterval(tickClock, 30000);
 loadReports();
+
+// Highlight default filter button
+document.querySelector('#reportFilters .v-btn[data-filter="all"]').style.borderColor = 'var(--acc-border)';
+document.querySelector('#reportFilters .v-btn[data-filter="all"]').style.color = 'var(--acc)';
 </script>
 </body>
 </html>
