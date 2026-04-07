@@ -7,14 +7,33 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 :root{
+  --sans:'DM Sans','Noto Sans SC',system-ui,sans-serif;
+  --serif:'Newsreader',Georgia,serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"]{
   --bg:#0a0d12;--bg2:#0f1319;--bg3:#161c26;--bg4:#1c2433;--bg5:#232d3f;
   --t1:#e4e8f0;--t2:#8d97ab;--t3:#555f75;
   --acc:#f7a21b;--acc2:#ff8c00;--acc-dim:rgba(247,162,27,.08);--acc-border:rgba(247,162,27,.2);
   --blue:#3a8fd4;--green:#2eac6e;--red:#d44a4a;--cyan:#2bb5b5;--purple:#a78bfa;
   --bd:#1e2738;--bd2:#2a3548;
-  --sans:'DM Sans','Noto Sans SC',system-ui,sans-serif;
-  --serif:'Newsreader',Georgia,serif;
-  --mono:'IBM Plex Mono',monospace;
+  --card-shadow:0 8px 24px rgba(0,0,0,.3);
+  --logo-bg:#0a0d12;
+  --iframe-bg:#fff;
+}
+
+/* ── Light Theme (Research Paper) ── */
+[data-theme="light"]{
+  --bg:#f0f2f5;--bg2:#ffffff;--bg3:#ffffff;--bg4:#f5f7fa;--bg5:#ebeef3;
+  --t1:#1a2233;--t2:#4a5568;--t3:#8893a2;
+  --acc:#c48a1a;--acc2:#b37a15;--acc-dim:rgba(196,138,26,.06);--acc-border:rgba(196,138,26,.18);
+  --blue:#2563eb;--green:#059669;--red:#dc2626;--cyan:#0891b2;--purple:#7c3aed;
+  --bd:#e2e6ec;--bd2:#d1d5db;
+  --card-shadow:0 4px 16px rgba(0,0,0,.06);
+  --logo-bg:#ffffff;
+  --iframe-bg:#fff;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--sans);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden}
