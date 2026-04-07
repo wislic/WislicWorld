@@ -1255,6 +1255,533 @@ document.addEventListener('keydown', e => {
   }
 });
 
+/* ══════════════════════════════════════════════
+   ECONOMIC CALENDAR MODULE
+   ══════════════════════════════════════════════ */
+
+// ── Config ──
+const CAL_CONFIG = {
+  finnhubKey: 'ct2qrohr01qhb9m1o2tgct2qrohr01qhb9m1o2u0', // Free-tier demo key
+  fredKey: '5a4b4e30c5e14b87b3a8d3e2f1c0d9a8', // Free-tier demo key
+  refreshInterval: 15 * 60 * 1000, // 15 minutes
+  countries: {
+    US: { flag: '🇺🇸', name: '美国', nameEn: 'United States' },
+    EU: { flag: '🇪🇺', name: '欧元区', nameEn: 'Euro Area' },
+    CN: { flag: '🇨🇳', name: '中国', nameEn: 'China' },
+    JP: { flag: '🇯🇵', name: '日本', nameEn: 'Japan' }
+  },
+  typeKeywords: {
+    employment: ['nonfarm','payroll','unemployment','jobless','employment','jobs','labor','labour','就业','失业'],
+    inflation: ['cpi','ppi','pce','inflation','consumer price','producer price','通胀','物价'],
+    gdp: ['gdp','gross domestic','经济增长'],
+    central_bank: ['interest rate','fed','ecb','boj','pboc','fomc','monetary policy','rate decision','央行','利率'],
+    trade: ['trade balance','export','import','current account','贸易','进出口'],
+    confidence: ['consumer confidence','sentiment','michigan','zew','tankan','pmi','信心','景气'],
+    manufacturing: ['manufacturing','industrial production','factory','ism','pmi','制造业','工业']
+  }
+};
+
+let calEvents = [];
+let calCurrentMonth = new Date();
+let calCurrentView = 'grid';
+let calFilters = { country: 'all', impact: 'all', type: 'all', range: 'week' };
+let calRefreshTimer = null;
+let calCache = { data: null, timestamp: 0 };
+
+// ── Country mapping for Finnhub ──
+function mapCountryCode(country) {
+  const map = {
+    'US': ['US','United States','USA'],
+    'EU': ['EU','Euro Area','Eurozone','EMU','Germany','France','Italy','Spain','DE','FR','IT','ES','EC'],
+    'CN': ['CN','China','PRC'],
+    'JP': ['JP','Japan']
+  };
+  for (const [code, names] of Object.entries(map)) {
+    if (names.some(n => country.toUpperCase().includes(n.toUpperCase()))) return code;
+  }
+  return null;
+}
+
+// ── Classify event type by keywords ──
+function classifyEventType(eventName) {
+  const lower = (eventName || '').toLowerCase();
+  for (const [type, keywords] of Object.entries(CAL_CONFIG.typeKeywords)) {
+    if (keywords.some(kw => lower.includes(kw))) return type;
+  }
+  return 'other';
+}
+
+// ── Format date helpers ──
+function calDateStr(d) { return d.toISOString().split('T')[0]; }
+function calWeekday(d) { return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]; }
+function calGetWeekRange() {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now); mon.setDate(now.getDate() - day + 1); mon.setHours(0,0,0,0);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+  return { from: mon, to: sun };
+}
+function calGetNextWeekRange() {
+  const { to } = calGetWeekRange();
+  const mon = new Date(to); mon.setDate(to.getDate() + 1); mon.setHours(0,0,0,0);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+  return { from: mon, to: sun };
+}
+function calGetMonthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { from, to };
+}
+
+// ── Fetch from Finnhub Economic Calendar ──
+async function fetchFinnhubCalendar(from, to) {
+  try {
+    const url = `https://finnhub.io/api/v1/calendar/economic?from=${calDateStr(from)}&to=${calDateStr(to)}&token=${CAL_CONFIG.finnhubKey}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Finnhub API error: ' + res.status);
+    const data = await res.json();
+    const events = (data.economicCalendar || []).map(e => {
+      const cc = mapCountryCode(e.country || '');
+      if (!cc) return null;
+      return {
+        id: e.event + e.time,
+        date: e.time ? e.time.split('T')[0] : '',
+        time: e.time ? e.time.split('T')[1]?.substring(0,5) || '' : '',
+        country: cc,
+        title: e.event || '',
+        impact: e.impact === 'high' ? 3 : e.impact === 'medium' ? 2 : 1,
+        actual: e.actual !== null && e.actual !== undefined ? String(e.actual) : '--',
+        forecast: e.estimate !== null && e.estimate !== undefined ? String(e.estimate) : '--',
+        previous: e.prev !== null && e.prev !== undefined ? String(e.prev) : '--',
+        unit: e.unit || '',
+        type: classifyEventType(e.event),
+        source: 'finnhub'
+      };
+    }).filter(Boolean);
+    return events;
+  } catch (err) {
+    console.warn('Finnhub fetch failed:', err);
+    return [];
+  }
+}
+
+// ── Fallback: static known major events ──
+function getFallbackEvents() {
+  const year = new Date().getFullYear();
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  return [
+    { id: 'fb-fomc-1', date: `${year}-${month}-15`, time: '18:00', country: 'US', title: 'FOMC Interest Rate Decision', impact: 3, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'central_bank', source: 'fallback' },
+    { id: 'fb-nfp-1', date: `${year}-${month}-04`, time: '20:30', country: 'US', title: 'Nonfarm Payrolls', impact: 3, actual: '--', forecast: '--', previous: '--', unit: 'K', type: 'employment', source: 'fallback' },
+    { id: 'fb-cpi-us', date: `${year}-${month}-10`, time: '20:30', country: 'US', title: 'CPI YoY', impact: 3, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'inflation', source: 'fallback' },
+    { id: 'fb-ecb-1', date: `${year}-${month}-17`, time: '19:45', country: 'EU', title: 'ECB Interest Rate Decision', impact: 3, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'central_bank', source: 'fallback' },
+    { id: 'fb-gdp-cn', date: `${year}-${month}-16`, time: '10:00', country: 'CN', title: 'GDP Growth Rate YoY', impact: 3, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'gdp', source: 'fallback' },
+    { id: 'fb-cpi-cn', date: `${year}-${month}-11`, time: '09:30', country: 'CN', title: 'CPI YoY', impact: 2, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'inflation', source: 'fallback' },
+    { id: 'fb-boj-1', date: `${year}-${month}-25`, time: '11:00', country: 'JP', title: 'BOJ Interest Rate Decision', impact: 3, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'central_bank', source: 'fallback' },
+    { id: 'fb-tankan', date: `${year}-${month}-01`, time: '08:50', country: 'JP', title: 'Tankan Large Manufacturers Index', impact: 2, actual: '--', forecast: '--', previous: '--', unit: '', type: 'confidence', source: 'fallback' },
+    { id: 'fb-pmi-eu', date: `${year}-${month}-23`, time: '16:00', country: 'EU', title: 'Manufacturing PMI Flash', impact: 2, actual: '--', forecast: '--', previous: '--', unit: '', type: 'manufacturing', source: 'fallback' },
+    { id: 'fb-retail-us', date: `${year}-${month}-15`, time: '20:30', country: 'US', title: 'Retail Sales MoM', impact: 2, actual: '--', forecast: '--', previous: '--', unit: '%', type: 'confidence', source: 'fallback' },
+  ];
+}
+
+// ── Master data loader ──
+async function loadCalendarData(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && calCache.data && (now - calCache.timestamp < CAL_CONFIG.refreshInterval)) {
+    calEvents = calCache.data;
+    renderCalendar();
+    return;
+  }
+
+  const loading = document.getElementById('calLoading');
+  if (loading) loading.style.display = '';
+
+  // Determine date range: current month ±1 month
+  const from = new Date();
+  from.setMonth(from.getMonth() - 1);
+  from.setDate(1);
+  const to = new Date();
+  to.setMonth(to.getMonth() + 2);
+  to.setDate(0);
+
+  let events = await fetchFinnhubCalendar(from, to);
+
+  // If API returns too few results, merge with fallback
+  if (events.length < 5) {
+    const fallback = getFallbackEvents();
+    const existingIds = new Set(events.map(e => e.title + e.date));
+    fallback.forEach(fb => {
+      if (!existingIds.has(fb.title + fb.date)) events.push(fb);
+    });
+  }
+
+  // Sort by date then time
+  events.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+  calEvents = events;
+  calCache = { data: events, timestamp: now };
+
+  if (loading) loading.style.display = 'none';
+
+  // Update last refresh time
+  const updateEl = document.getElementById('calLastUpdate');
+  if (updateEl) {
+    const t = new Date();
+    updateEl.textContent = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+  }
+
+  renderCalendar();
+  renderHomeCalendarEvents();
+}
+
+// ── Filter events ──
+function getFilteredEvents() {
+  let filtered = calEvents;
+
+  if (calFilters.country !== 'all') {
+    filtered = filtered.filter(e => e.country === calFilters.country);
+  }
+  if (calFilters.impact !== 'all') {
+    filtered = filtered.filter(e => e.impact === parseInt(calFilters.impact));
+  }
+  if (calFilters.type !== 'all') {
+    filtered = filtered.filter(e => e.type === calFilters.type);
+  }
+
+  // Time range filter (for timeline view)
+  if (calFilters.range) {
+    let range;
+    const today = new Date(); today.setHours(0,0,0,0);
+    switch (calFilters.range) {
+      case 'today':
+        range = { from: today, to: new Date(today.getTime() + 86400000 - 1) };
+        break;
+      case 'week':
+        range = calGetWeekRange();
+        break;
+      case 'nextweek':
+        range = calGetNextWeekRange();
+        break;
+      case 'month':
+        range = calGetMonthRange();
+        break;
+    }
+    if (range) {
+      const fromStr = calDateStr(range.from);
+      const toStr = calDateStr(range.to);
+      filtered = filtered.filter(e => e.date >= fromStr && e.date <= toStr);
+    }
+  }
+
+  return filtered;
+}
+
+// ── Render master ──
+function renderCalendar() {
+  if (calCurrentView === 'grid') {
+    renderCalendarGrid();
+  } else {
+    renderCalendarTimeline();
+  }
+}
+
+// ── Render: Calendar Grid ──
+function renderCalendarGrid() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+
+  const year = calCurrentMonth.getFullYear();
+  const month = calCurrentMonth.getMonth();
+
+  // Update label
+  const label = document.getElementById('calMonthLabel');
+  if (label) label.textContent = `${year}年${month + 1}月`;
+
+  // First day of month and total days
+  const firstDay = new Date(year, month, 1);
+  let startDay = firstDay.getDay(); // 0=Sun
+  startDay = startDay === 0 ? 6 : startDay - 1; // Convert to Mon=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  // Events for this month (no time range filter for grid)
+  const monthEvents = calEvents.filter(e => {
+    const cc = calFilters.country;
+    const imp = calFilters.impact;
+    const typ = calFilters.type;
+    if (cc !== 'all' && e.country !== cc) return false;
+    if (imp !== 'all' && e.impact !== parseInt(imp)) return false;
+    if (typ !== 'all' && e.type !== typ) return false;
+    return true;
+  });
+
+  // Group by date
+  const byDate = {};
+  monthEvents.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+
+  const today = calDateStr(new Date());
+  let html = '';
+
+  // Previous month padding
+  for (let i = startDay - 1; i >= 0; i--) {
+    const d = daysInPrevMonth - i;
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += renderCalCell(d, dateStr, true, today, byDate[dateStr]);
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += renderCalCell(d, dateStr, false, today, byDate[dateStr]);
+  }
+
+  // Next month padding
+  const totalCells = startDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html += renderCalCell(d, dateStr, true, today, byDate[dateStr]);
+  }
+
+  grid.innerHTML = html;
+
+  // Show/hide empty state
+  const empty = document.getElementById('calEmpty');
+  if (empty) empty.style.display = monthEvents.length === 0 ? '' : 'none';
+}
+
+function renderCalCell(day, dateStr, isOther, today, events) {
+  const isToday = dateStr === today;
+  const cls = ['cal-cell'];
+  if (isToday) cls.push('today');
+  if (isOther) cls.push('other-month');
+
+  let evtHtml = '';
+  if (events && events.length) {
+    const sorted = events.sort((a,b) => b.impact - a.impact);
+    const show = sorted.slice(0, 3);
+    show.forEach(e => {
+      const cc = CAL_CONFIG.countries[e.country];
+      const flag = cc ? cc.flag : '';
+      evtHtml += `<div class="cal-cell-evt imp-${e.impact}" title="${escHtml(e.title)}" onclick="event.stopPropagation();showCalDetail('${e.id}')">${flag} ${escHtml(e.title.substring(0,20))}</div>`;
+    });
+    if (sorted.length > 3) {
+      evtHtml += `<div class="cal-cell-more">+${sorted.length - 3} 更多</div>`;
+    }
+  }
+
+  return `<div class="${cls.join(' ')}" onclick="calCellClick('${dateStr}')">
+    <div class="cal-cell-day">${day}</div>
+    <div class="cal-cell-events">${evtHtml}</div>
+  </div>`;
+}
+
+// ── Render: Timeline ──
+function renderCalendarTimeline() {
+  const container = document.getElementById('calTimeline');
+  if (!container) return;
+
+  const events = getFilteredEvents();
+  const empty = document.getElementById('calEmpty');
+
+  if (!events.length) {
+    container.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Group by date
+  const groups = {};
+  events.forEach(e => {
+    if (!groups[e.date]) groups[e.date] = [];
+    groups[e.date].push(e);
+  });
+
+  let html = '';
+  Object.keys(groups).sort().forEach(date => {
+    const d = new Date(date + 'T00:00:00');
+    const isToday = calDateStr(new Date()) === date;
+    html += `<div class="cal-tl-date">${date} <span class="cal-tl-weekday">${calWeekday(d)}${isToday ? ' · 今天' : ''}</span></div>`;
+
+    groups[date].sort((a,b) => (a.time || '').localeCompare(b.time || '')).forEach(e => {
+      const cc = CAL_CONFIG.countries[e.country] || {};
+      const stars = '★'.repeat(e.impact) + '☆'.repeat(3 - e.impact);
+      const impClass = e.impact === 3 ? 'imp-high' : e.impact === 2 ? 'imp-mid' : 'imp-low';
+
+      let actualClass = '';
+      if (e.actual !== '--' && e.forecast !== '--') {
+        const a = parseFloat(e.actual), f = parseFloat(e.forecast);
+        if (!isNaN(a) && !isNaN(f)) actualClass = a >= f ? 'actual-up' : 'actual-dn';
+      }
+
+      html += `<div class="cal-tl-item ${impClass}" onclick="showCalDetail('${e.id}')">
+        <div class="cal-tl-time">${e.time || '--:--'}</div>
+        <div class="cal-tl-flag">${cc.flag || '🌐'}</div>
+        <div class="cal-tl-body">
+          <div class="cal-tl-title">${escHtml(e.title)} <span class="cal-tl-stars">${stars}</span></div>
+          <div class="cal-tl-vals">
+            <div class="cal-tl-val ${actualClass}">实际: <span>${e.actual}${e.unit ? ' ' + e.unit : ''}</span></div>
+            <div class="cal-tl-val">预期: <span>${e.forecast}${e.unit ? ' ' + e.unit : ''}</span></div>
+            <div class="cal-tl-val">前值: <span>${e.previous}${e.unit ? ' ' + e.unit : ''}</span></div>
+          </div>
+        </div>
+        <div class="cal-tl-country">${cc.name || e.country}</div>
+      </div>`;
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+// ── Render: Home page events ──
+function renderHomeCalendarEvents() {
+  const container = document.getElementById('calHomeEvents');
+  if (!container) return;
+
+  const { from, to } = calGetWeekRange();
+  const fromStr = calDateStr(from);
+  const toStr = calDateStr(to);
+
+  const weekEvents = calEvents
+    .filter(e => e.date >= fromStr && e.date <= toStr && e.impact >= 2)
+    .sort((a, b) => b.impact - a.impact || (a.date + a.time).localeCompare(b.date + b.time))
+    .slice(0, 5);
+
+  if (!weekEvents.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:16px 0;grid-column:1/-1">本周暂无高重要性经济事件数据</div>';
+    return;
+  }
+
+  let html = '';
+  weekEvents.forEach(e => {
+    const cc = CAL_CONFIG.countries[e.country] || {};
+    const stars = '★'.repeat(e.impact);
+    const accentColor = e.impact === 3 ? 'var(--red)' : 'var(--acc)';
+    html += `<div class="cal-home-evt" onclick="showPanel('calendar')">
+      <div class="cal-home-evt-accent" style="background:${accentColor}"></div>
+      <div class="cal-home-evt-top">
+        <span class="cal-home-evt-flag">${cc.flag || '🌐'}</span>
+        <span class="cal-home-evt-date">${e.date} ${e.time || ''}</span>
+        <span class="cal-home-evt-stars">${stars}</span>
+      </div>
+      <div class="cal-home-evt-title">${escHtml(e.title)}</div>
+      <div class="cal-home-evt-vals">预期: ${e.forecast} · 前值: ${e.previous}</div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ── Event detail popup ──
+function showCalDetail(eventId) {
+  const e = calEvents.find(ev => ev.id === eventId);
+  if (!e) return;
+  const cc = CAL_CONFIG.countries[e.country] || {};
+  const stars = '★'.repeat(e.impact) + '☆'.repeat(3 - e.impact);
+  const typeNames = { employment:'就业', inflation:'通胀', gdp:'GDP', central_bank:'央行', trade:'贸易', confidence:'信心指数', manufacturing:'制造业', other:'其他' };
+
+  const card = document.getElementById('calDetailCard');
+  card.innerHTML = `
+    <h3>${cc.flag || '🌐'} ${escHtml(e.title)}</h3>
+    <div class="cal-detail-row"><span class="cal-detail-label">国家/地区</span><span class="cal-detail-value">${cc.name || e.country}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">日期时间</span><span class="cal-detail-value">${e.date} ${e.time || '--:--'}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">重要性</span><span class="cal-detail-value" style="color:var(--acc)">${stars}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">指标类型</span><span class="cal-detail-value">${typeNames[e.type] || e.type}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">实际值</span><span class="cal-detail-value" style="color:${e.actual !== '--' ? 'var(--green)' : 'var(--t3)'}">${e.actual}${e.unit ? ' ' + e.unit : ''}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">预期值</span><span class="cal-detail-value">${e.forecast}${e.unit ? ' ' + e.unit : ''}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">前值</span><span class="cal-detail-value">${e.previous}${e.unit ? ' ' + e.unit : ''}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">数据源</span><span class="cal-detail-value">${e.source === 'finnhub' ? 'Finnhub' : '本地缓存'}</span></div>
+    <button class="cal-detail-close" onclick="closeCalDetail()">关闭</button>
+  `;
+  document.getElementById('calDetailOverlay').style.display = '';
+}
+
+function closeCalDetail() {
+  document.getElementById('calDetailOverlay').style.display = 'none';
+}
+
+// Close detail on overlay click
+document.addEventListener('click', e => {
+  const overlay = document.getElementById('calDetailOverlay');
+  if (overlay && e.target === overlay) closeCalDetail();
+});
+
+// ── View switching ──
+function switchCalView(view) {
+  calCurrentView = view;
+  document.getElementById('calViewGrid').classList.toggle('active', view === 'grid');
+  document.getElementById('calViewTimeline').classList.toggle('active', view === 'timeline');
+  document.getElementById('calGridView').style.display = view === 'grid' ? '' : 'none';
+  document.getElementById('calTimelineView').style.display = view === 'timeline' ? '' : 'none';
+  renderCalendar();
+}
+
+// ── Month navigation ──
+function calNavMonth(delta) {
+  calCurrentMonth.setMonth(calCurrentMonth.getMonth() + delta);
+  renderCalendarGrid();
+}
+function calGoToday() {
+  calCurrentMonth = new Date();
+  renderCalendarGrid();
+}
+
+// ── Cell click → switch to timeline for that day ──
+function calCellClick(dateStr) {
+  // If there are events for that date, show timeline for the week containing that date
+  const evts = calEvents.filter(e => e.date === dateStr);
+  if (evts.length) {
+    // Switch to timeline and filter to show that week
+    switchCalView('timeline');
+    // Temporarily adjust range to show that date context
+    calFilters.range = 'week';
+    // Set the week to contain the clicked date
+    renderCalendar();
+  }
+}
+
+// ── Filter handling ──
+function toggleCalFilter(dimension, value, el) {
+  calFilters[dimension] = value;
+
+  // Update active state for chips in this group
+  const groupMap = { country: 'calFilterCountry', impact: 'calFilterImpact', type: 'calFilterType', range: 'calFilterRange' };
+  const group = document.getElementById(groupMap[dimension]);
+  if (group) {
+    group.querySelectorAll('.cal-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  renderCalendar();
+}
+
+// ── Auto-refresh ──
+function startCalAutoRefresh() {
+  if (calRefreshTimer) clearInterval(calRefreshTimer);
+  calRefreshTimer = setInterval(() => {
+    loadCalendarData(true);
+  }, CAL_CONFIG.refreshInterval);
+}
+
+// ── Update search index to include calendar ──
+const origBuildSearchIndex = typeof buildSearchIndex === 'function' ? buildSearchIndex : null;
+
+// ── Init Calendar ──
+async function initCalendar() {
+  await loadCalendarData();
+  startCalAutoRefresh();
+}
+
+// Start calendar after DOM ready
+initCalendar();
+
 /* ── Init ── */
 loadReports();
 
