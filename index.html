@@ -447,6 +447,100 @@ a{color:inherit;text-decoration:none}
     </div>
   </div>
 
+  <!-- ═══ ECONOMIC CALENDAR PANEL ═══ -->
+  <div class="panel" id="p-calendar">
+    <div class="panel-hd"><h2>经济日历</h2><p>全球宏观经济事件追踪 · Finnhub + FRED + World Bank · 自动刷新</p></div>
+
+    <!-- View toggle & Filters -->
+    <div class="cal-toolbar">
+      <div class="cal-view-toggle">
+        <button class="cal-vbtn active" id="calViewGrid" onclick="switchCalView('grid')">📅 月历</button>
+        <button class="cal-vbtn" id="calViewTimeline" onclick="switchCalView('timeline')">📋 时间线</button>
+      </div>
+      <div class="cal-auto-status" id="calAutoStatus">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+        <span style="font-size:11px;color:var(--t3)">自动刷新 · <span id="calLastUpdate">--</span></span>
+      </div>
+    </div>
+
+    <!-- 4-dimension filters -->
+    <div class="cal-filters">
+      <div class="cal-filter-group">
+        <label class="cal-filter-label">🌍 国家/地区</label>
+        <div class="cal-filter-chips" id="calFilterCountry">
+          <button class="cal-chip active" data-val="all" onclick="toggleCalFilter('country','all',this)">全部</button>
+          <button class="cal-chip" data-val="US" onclick="toggleCalFilter('country','US',this)">🇺🇸 美国</button>
+          <button class="cal-chip" data-val="EU" onclick="toggleCalFilter('country','EU',this)">🇪🇺 欧元区</button>
+          <button class="cal-chip" data-val="CN" onclick="toggleCalFilter('country','CN',this)">🇨🇳 中国</button>
+          <button class="cal-chip" data-val="JP" onclick="toggleCalFilter('country','JP',this)">🇯🇵 日本</button>
+        </div>
+      </div>
+      <div class="cal-filter-group">
+        <label class="cal-filter-label">⭐ 重要性</label>
+        <div class="cal-filter-chips" id="calFilterImpact">
+          <button class="cal-chip active" data-val="all" onclick="toggleCalFilter('impact','all',this)">全部</button>
+          <button class="cal-chip" data-val="3" onclick="toggleCalFilter('impact','3',this)">★★★ 高</button>
+          <button class="cal-chip" data-val="2" onclick="toggleCalFilter('impact','2',this)">★★ 中</button>
+          <button class="cal-chip" data-val="1" onclick="toggleCalFilter('impact','1',this)">★ 低</button>
+        </div>
+      </div>
+      <div class="cal-filter-group">
+        <label class="cal-filter-label">📊 指标类型</label>
+        <div class="cal-filter-chips" id="calFilterType">
+          <button class="cal-chip active" data-val="all" onclick="toggleCalFilter('type','all',this)">全部</button>
+          <button class="cal-chip" data-val="employment" onclick="toggleCalFilter('type','employment',this)">就业</button>
+          <button class="cal-chip" data-val="inflation" onclick="toggleCalFilter('type','inflation',this)">通胀</button>
+          <button class="cal-chip" data-val="gdp" onclick="toggleCalFilter('type','gdp',this)">GDP</button>
+          <button class="cal-chip" data-val="central_bank" onclick="toggleCalFilter('type','central_bank',this)">央行</button>
+          <button class="cal-chip" data-val="trade" onclick="toggleCalFilter('type','trade',this)">贸易</button>
+          <button class="cal-chip" data-val="confidence" onclick="toggleCalFilter('type','confidence',this)">信心</button>
+          <button class="cal-chip" data-val="manufacturing" onclick="toggleCalFilter('type','manufacturing',this)">制造业</button>
+        </div>
+      </div>
+      <div class="cal-filter-group">
+        <label class="cal-filter-label">📅 时间范围</label>
+        <div class="cal-filter-chips" id="calFilterRange">
+          <button class="cal-chip" data-val="today" onclick="toggleCalFilter('range','today',this)">今日</button>
+          <button class="cal-chip active" data-val="week" onclick="toggleCalFilter('range','week',this)">本周</button>
+          <button class="cal-chip" data-val="nextweek" onclick="toggleCalFilter('range','nextweek',this)">下周</button>
+          <button class="cal-chip" data-val="month" onclick="toggleCalFilter('range','month',this)">本月</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Grid View (default) -->
+    <div class="cal-view" id="calGridView">
+      <div class="cal-grid-nav">
+        <button class="cal-nav-btn" onclick="calNavMonth(-1)">◀</button>
+        <span class="cal-month-label" id="calMonthLabel">2026年4月</span>
+        <button class="cal-nav-btn" onclick="calNavMonth(1)">▶</button>
+        <button class="cal-nav-btn cal-today-btn" onclick="calGoToday()">今天</button>
+      </div>
+      <div class="cal-grid-header">
+        <div class="cal-gh">一</div><div class="cal-gh">二</div><div class="cal-gh">三</div><div class="cal-gh">四</div><div class="cal-gh">五</div><div class="cal-gh cal-gh-weekend">六</div><div class="cal-gh cal-gh-weekend">日</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- Timeline View -->
+    <div class="cal-view" id="calTimelineView" style="display:none">
+      <div class="cal-timeline" id="calTimeline"></div>
+    </div>
+
+    <!-- Event detail overlay -->
+    <div class="cal-detail-overlay" id="calDetailOverlay" style="display:none">
+      <div class="cal-detail-card" id="calDetailCard"></div>
+    </div>
+
+    <!-- Loading & Empty states -->
+    <div class="cal-loading" id="calLoading" style="display:none">
+      <div class="cal-skeleton"></div><div class="cal-skeleton"></div><div class="cal-skeleton"></div>
+    </div>
+    <div class="cal-empty" id="calEmpty" style="display:none">
+      <p>暂无符合条件的经济事件</p>
+    </div>
+  </div>
+
   <!-- ═══ MACRO PANEL ═══ -->
   <div class="panel" id="p-macro">
     <div class="panel-hd"><h2>宏观研究</h2><p>五层宏观分析框架 · 三阶九周期系统 · 36项领先指标</p></div>
