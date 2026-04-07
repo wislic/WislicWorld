@@ -59,6 +59,27 @@
       "category": "other",
       "date": "2026-03-29",
       "file": "reports/other/weekly-macro-W13-2026.html"
+    },
+    {
+      "title": "农产品大周期投研框架",
+      "category": "deep",
+      "date": "2026-04-07",
+      "file": "reports/deep/agri-research-framework.html",
+      "assetClass": "commodity"
+    },
+    {
+      "title": "ENSO Tracker · 厄尔尼诺监测与确认框架",
+      "category": "deep",
+      "date": "2026-04-07",
+      "file": "reports/deep/enso-tracker.html",
+      "assetClass": "commodity"
+    },
+    {
+      "title": "易陞宏观分析框架 — 全球资本流动与美元霸权",
+      "category": "deep",
+      "date": "2026-04-07",
+      "file": "reports/deep/yisheng_macro_framework_202604.html",
+      "assetClass": "commodity"
     }
   ]
 }
