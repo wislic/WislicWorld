@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-07T10:07:40.097031Z",
+  "lastUpdated": "2026-04-07T10:08:00.609109Z",
   "source": "FXStreet via BigData MCP",
   "events": [
     {
@@ -13,7 +13,7 @@
       "forecast": "-0.5%",
       "previous": "--",
       "unit": "",
-      "type": "inflation",
+      "type": "manufacturing",
       "source": "fxstreet"
     },
     {
@@ -27,7 +27,7 @@
       "forecast": "--",
       "previous": "--",
       "unit": "",
-      "type": "inflation",
+      "type": "manufacturing",
       "source": "fxstreet"
     },
     {
@@ -41,7 +41,7 @@
       "forecast": "0.5%",
       "previous": "--",
       "unit": "",
-      "type": "inflation",
+      "type": "manufacturing",
       "source": "fxstreet"
     },
     {
@@ -55,7 +55,7 @@
       "forecast": "--",
       "previous": "--",
       "unit": "",
-      "type": "other",
+      "type": "manufacturing",
       "source": "fxstreet"
     },
     {
@@ -83,7 +83,7 @@
       "forecast": "48.1",
       "previous": "--",
       "unit": "",
-      "type": "confidence",
+      "type": "manufacturing",
       "source": "fxstreet"
     },
     {
@@ -251,7 +251,7 @@
       "forecast": "--",
       "previous": "--",
       "unit": "",
-      "type": "other",
+      "type": "trade",
       "source": "fxstreet"
     },
     {
@@ -503,7 +503,7 @@
       "forecast": "4.2%",
       "previous": "--",
       "unit": "",
-      "type": "other",
+      "type": "confidence",
       "source": "fxstreet"
     },
     {
@@ -559,7 +559,7 @@
       "forecast": "--",
       "previous": "--",
       "unit": "",
-      "type": "other",
+      "type": "trade",
       "source": "fxstreet"
     },
     {
