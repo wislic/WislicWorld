@@ -1438,9 +1438,19 @@ async function loadCalendarData(forceRefresh = false) {
   to.setMonth(to.getMonth() + 2);
   to.setDate(0);
 
-  let events = await fetchFinnhubCalendar(from, to);
+  // 主数据源: Trading Economics → 备用: Finnhub → 最终: 静态 fallback
+  let events = await fetchTradingEconomicsCalendar(from, to);
 
-  // If API returns too few results, merge with fallback
+  // If TE fails or too few, try Finnhub
+  if (events.length < 5) {
+    const finnhubEvents = await fetchFinnhubCalendar(from, to);
+    const existingIds = new Set(events.map(e => e.title + e.date));
+    finnhubEvents.forEach(e => {
+      if (!existingIds.has(e.title + e.date)) events.push(e);
+    });
+  }
+
+  // If still too few, merge static fallback
   if (events.length < 5) {
     const fallback = getFallbackEvents();
     const existingIds = new Set(events.map(e => e.title + e.date));
