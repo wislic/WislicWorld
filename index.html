@@ -1680,7 +1680,7 @@ function showCalDetail(eventId) {
     <div class="cal-detail-row"><span class="cal-detail-label">实际值</span><span class="cal-detail-value" style="color:${e.actual !== '--' ? 'var(--green)' : 'var(--t3)'}">${e.actual}${e.unit ? ' ' + e.unit : ''}</span></div>
     <div class="cal-detail-row"><span class="cal-detail-label">预期值</span><span class="cal-detail-value">${e.forecast}${e.unit ? ' ' + e.unit : ''}</span></div>
     <div class="cal-detail-row"><span class="cal-detail-label">前值</span><span class="cal-detail-value">${e.previous}${e.unit ? ' ' + e.unit : ''}</span></div>
-    <div class="cal-detail-row"><span class="cal-detail-label">数据源</span><span class="cal-detail-value">${e.source === 'tradingeconomics' ? 'Trading Economics' : e.source === 'finnhub' ? 'Finnhub' : '本地缓存'}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">数据源</span><span class="cal-detail-value">${e.source === 'fxstreet' ? 'FXStreet' : e.source === 'fallback' ? '静态缓存' : e.source || 'BigData'}</span></div>
     <button class="cal-detail-close" onclick="closeCalDetail()">关闭</button>
   `;
   document.getElementById('calDetailOverlay').style.display = '';
