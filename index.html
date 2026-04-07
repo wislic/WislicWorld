@@ -917,8 +917,12 @@ document.addEventListener('keydown', e => {
     document.getElementById('searchInput').focus();
   }
   if (e.key === 'Escape') {
-    if (activeFile) closeViewer();
-    document.getElementById('searchInput').blur();
+    if (document.getElementById('searchResults').classList.contains('open')) {
+      document.getElementById('searchResults').classList.remove('open');
+      document.getElementById('searchInput').blur();
+    } else if (activeFile) {
+      closeViewer();
+    }
   }
 });
 
