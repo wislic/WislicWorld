@@ -588,6 +588,9 @@ function buildUI() {
 
   // Build reports panel
   renderReportCards();
+
+  // Rebuild search index with reports data
+  searchIndex = buildSearchIndex();
 }
 
 /* ── Nav dropdown with reports grouped by date ── */
