@@ -1387,28 +1387,11 @@ async function loadCalendarData(forceRefresh = false) {
   const loading = document.getElementById('calLoading');
   if (loading) loading.style.display = '';
 
-  // Determine date range: current month ±1 month
-  const from = new Date();
-  from.setMonth(from.getMonth() - 1);
-  from.setDate(1);
-  const to = new Date();
-  to.setMonth(to.getMonth() + 2);
-  to.setDate(0);
+  // 主数据源: 本地 calendar-data.json (由 BigData MCP 定期生成)
+  let events = await fetchLocalCalendarJSON();
 
-  // 主数据源: Trading Economics → 备用: Finnhub → 最终: 静态 fallback
-  let events = await fetchTradingEconomicsCalendar(from, to);
-
-  // If TE fails or too few, try Finnhub
-  if (events.length < 5) {
-    const finnhubEvents = await fetchFinnhubCalendar(from, to);
-    const existingIds = new Set(events.map(e => e.title + e.date));
-    finnhubEvents.forEach(e => {
-      if (!existingIds.has(e.title + e.date)) events.push(e);
-    });
-  }
-
-  // If still too few, merge static fallback
-  if (events.length < 5) {
+  // If JSON empty/missing, use static fallback
+  if (events.length < 3) {
     const fallback = getFallbackEvents();
     const existingIds = new Set(events.map(e => e.title + e.date));
     fallback.forEach(fb => {
