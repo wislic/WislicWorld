@@ -302,6 +302,17 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <div class="nav-item">
+      <button class="nav-btn" onclick="showPanel('assets')">大类资产</button>
+      <div class="dropdown">
+        <div class="dd-item-static" onclick="showPanel('assets','equity')">权益市场</div>
+        <div class="dd-item-static" onclick="showPanel('assets','bond')">债券市场</div>
+        <div class="dd-item-static" onclick="showPanel('assets','commodity')">大宗商品</div>
+        <div class="dd-item-static" onclick="showPanel('assets','fx')">外汇市场</div>
+        <div class="dd-item-static" onclick="showPanel('assets','crypto')">数字货币</div>
+      </div>
+    </div>
+
+    <div class="nav-item">
       <button class="nav-btn" onclick="showPanel('market')">市场策略</button>
       <div class="dropdown">
         <div class="dd-item-static" onclick="showPanel('market')">跨资产图</div>
