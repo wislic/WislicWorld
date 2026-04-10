@@ -2,7 +2,7 @@
   "lastUpdated": "2026-04-10T00:00:00Z",
   "source": "TradingEconomics/Investing.com",
   "stats": {
-    "total": 152,
+    "total": 136,
     "byCountry": {
       "US": 52,
       "EU": 30,
@@ -11,8 +11,8 @@
     },
     "byImpact": {
       "HIGH": 48,
-      "MEDIUM": 74,
-      "LOW": 30
+      "MEDIUM": 78,
+      "LOW": 10
     }
   },
   "events": [
@@ -107,10 +107,10 @@
       "country": "JP",
       "title": "Current Account (Feb)",
       "impact": 2,
-      "actual": "¥3933B",
-      "forecast": "¥4100B",
-      "previous": "¥942B",
-      "unit": "¥B",
+      "actual": "\u00a53933B",
+      "forecast": "\u00a54100B",
+      "previous": "\u00a5942B",
+      "unit": "\u00a5B",
       "type": "trade",
       "source": "tradingeconomics"
     },
@@ -933,10 +933,10 @@
       "country": "EU",
       "title": "Current Account (FEB)",
       "impact": 2,
-      "actual": "€13B",
+      "actual": "\u20ac13B",
       "forecast": "--",
       "previous": "--",
-      "unit": "€B",
+      "unit": "\u20acB",
       "type": "trade",
       "source": "tradingeconomics"
     },
@@ -947,10 +947,10 @@
       "country": "EU",
       "title": "Balance of Trade (FEB)",
       "impact": 2,
-      "actual": "€-1.9B",
+      "actual": "\u20ac-1.9B",
       "forecast": "--",
       "previous": "--",
-      "unit": "€B",
+      "unit": "\u20acB",
       "type": "trade",
       "source": "tradingeconomics"
     },
@@ -1045,10 +1045,10 @@
       "country": "JP",
       "title": "Balance of Trade (Mar)",
       "impact": 2,
-      "actual": "¥57.3B",
-      "forecast": "¥470B",
+      "actual": "\u00a557.3B",
+      "forecast": "\u00a5470B",
       "previous": "--",
-      "unit": "¥B",
+      "unit": "\u00a5B",
       "type": "trade",
       "source": "tradingeconomics"
     },
